@@ -6,7 +6,7 @@ class TelegramBot(ABC):
     def __init__(self, token):
 
         self.me = "https://api.telegram.org/bot{token}/sendMessage".format(token=token)
-        self.payload = {'chat_id': "", 'text': "", 'parse_mode': 'markdown'}
+        self.payload = {'chat_id': "", 'text': "", 'parse_mode': 'HTML'}
 
     def sendMessage(self, message, chat):
         self.payload['chat_id'] = chat
@@ -21,4 +21,4 @@ class Terminator(TelegramBot):
 
     
     def sendMessage(self, message, chat = '109373025'):
-        super().sendMessage(message, chat) 
+        super().sendMessage(message + "\n\nHasta la vista!", chat) 
