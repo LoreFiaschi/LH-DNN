@@ -209,8 +209,8 @@ class CNN3(ABC, nn.Module):
         self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.class_levels)
         self.num_push = 0
 
-        if custom_training:
-          self.custom_training()
+        if self.custom_training:
+          self.custom_training_f()
             
         elif self.switch_point is None:
             for epoch in tqdm(np.arange(9), desc="Training: "):
@@ -229,7 +229,7 @@ class CNN3(ABC, nn.Module):
         self.plot_test_accuracy(filename+"_test_accuracy_.pdf")
 
         
-        def custom_training(self):
+        def custom_training_f(self):
             pass
 
 
@@ -329,21 +329,21 @@ class CNN3(ABC, nn.Module):
         # cross classes accuracy (tree)
         for i in np.arange(self.num_c_1):
             accuracy_c1_c2 = 100 * float(self.correct_c1_vs_c2_pred[i]) / self.total_c1_vs_c2_pred[i]
-            str += f'Cross-accuracy {self.labels_c_1[i]:5s} vs c2: {accuracy_c1_c2:.2f} %'
+            str += f'Cross-accuracy {self.labels_c_1[i]:9s} vs c2: {accuracy_c1_c2:.2f} %'
             str += '\n'
             
         str += '\n'
         
         for i in np.arange(self.num_c_2):
             accuracy_c2_c3 = 100 * float(self.correct_c2_vs_c3_pred[i]) / self.total_c2_vs_c3_pred[i]
-            str += f'Cross-accuracy {self.labels_c_2[i]:5s} vs c3: {accuracy_c2_c3:.2f} %'
+            str += f'Cross-accuracy {self.labels_c_2[i]:7s} vs c3: {accuracy_c2_c3:.2f} %'
             str += '\n'
             
         str += '\n'
         
         for i in np.arange(self.num_c_1):
             accuracy_c1_c3 = 100 * float(self.correct_c1_vs_c3_pred[i]) / self.total_c1_vs_c3_pred[i]
-            str += f'Cross-accuracy {self.labels_c_1[i]:5s} vs c3: {accuracy_c1_c3:.2f} %'
+            str += f'Cross-accuracy {self.labels_c_1[i]:9s} vs c3: {accuracy_c1_c3:.2f} %'
             str += '\n'
 
         return str
@@ -388,15 +388,13 @@ class CNN3(ABC, nn.Module):
                 self.plot_test_results()
 
             case "print":
-                msg = self.print_test_results()
+                msg = self.test_results_to_text()
                 print(m)
                 return msg
 
             case "write":
-                msg = self.print_test_results()
-                msg += '\n'
-                msg += "Number of params: " + str(self.num_param())
-                with open(filename, 'w') as f:
+                msg = self.test_results_to_text()
+                with open(filename+"_test_performance.txt", 'w') as f:
                     f.write(msg)
                 return msg
 
@@ -444,23 +442,26 @@ class CNN3(ABC, nn.Module):
 
     
     def save_model(self, path):
-        torch.save(self.state_dict(), path)
+        torch.save(self.state_dict(), path+".pt")
 
     
     def load_model(self, path):
-        self.load_state_dict(torch.load(path))
+        self.load_state_dict(torch.load(path+".pt"))
         self.eval()
 
     def num_param(self):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
     def write_configuration(self, filename, additional_info = "No"):
-
-        with open(filename+"_configuration.txt", 'a') as f:
-            f.write("Epochs: " + str(self.epochs) + '\n')
-            f.write("LR: ")
-            for lr in self.learning_rate:
-                f.write(str(lr) + " ")
-            f.write('\n')
-            f.write("Switch point: " + str(self.switch_point + '\n'))
-            f.write("Additional info: " + additional_info)
+        msg = ""
+        msg += "Epochs: " + str(self.epochs) + "\n\n"
+        msg += "LR: " 
+        for lr in self.learning_rate:
+            msg += str(lr) + " "
+        msg += "\n\n"
+        msg += "Switch point: " + str(self.switch_point) + "\n\n"
+        msg += "Number of params: " + str(self.num_param()) + "\n\n"
+        msg += "Additional info: " + additional_info
+        
+        with open(filename+"_configuration.txt", 'w') as f:
+            f.write(msg)
