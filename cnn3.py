@@ -20,6 +20,18 @@ num_cores = 8
 torch.set_num_interop_threads(num_cores) # Inter-op parallelism
 torch.set_num_threads(num_cores) # Intra-op parallelism
 
+num_class_c1 = 2
+num_class_c2 = 7
+num_class_c3 = 10
+
+#--- coarse 1 classes ---
+labels_c_1 = ('transport', 'animal')
+#--- coarse 2 classes ---
+labels_c_2 = ('sky', 'water', 'road', 'bird', 'reptile', 'pet', 'medium')
+#--- fine classes ---
+labels_c_3 = ('plane', 'car', 'bird', 'cat',
+           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+
 
 def c3_to_c1(y):
     if y < 2 or y > 7:
@@ -80,7 +92,7 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle
 class CNN3(ABC, nn.Module):
     def __init__(self, learning_rate, momentum, nesterov, trainloader, testloader, 
                  epochs, num_class_c1, num_class_c2, num_class_c3, labels_c_1, labels_c_2, labels_c_3, 
-                 every_print = 512, training_size = 50000):
+                 every_print = 512, switch_point = None, custom_training = False, training_size = 50000):
         
         super().__init__()
         self.trainloader = trainloader
@@ -94,13 +106,15 @@ class CNN3(ABC, nn.Module):
         self.num_c_2 = num_class_c2
         self.num_c_3 = num_class_c3
         self.epochs = epochs
+        self.switch_point = switch_point if (switch_point is None or switch_point < epochs) else epochs
+        self.custom_training = custom_training
         self.labels_c_1 = labels_c_1
         self.labels_c_2 = labels_c_2
         self.labels_c_3 = labels_c_3
         self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
         self.track_size = int( training_size / batch_size / every_print ) 
 
-
+    
     def forward(self, x):
         pass
 
@@ -194,14 +208,29 @@ class CNN3(ABC, nn.Module):
         self.loss_track = torch.zeros(self.epochs * self.track_size, self.class_levels)
         self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.class_levels)
         self.num_push = 0
-        
-        self.custom_training()
+
+        if custom_training:
+          self.custom_training()
+            
+        elif self.switch_point is None:
+            for epoch in tqdm(np.arange(9), desc="Training: "):
+                self.training_loop_body()
+                
+        else:
+            for epoch in tqdm(np.arange(self.switch_point), desc="Training: "):
+                self.training_loop_body()
+    
+            self.optimizer.param_groups[0]['lr'] = self.learning_rate[1]
+    
+            for epoch in tqdm(np.arange(self.switch_point, self.epochs), desc="Training: "):
+                self.training_loop_body()
 
         self.plot_training_loss(filename+"_train_loss.pdf")
         self.plot_test_accuracy(filename+"_test_accuracy_.pdf")
 
-    def custom_training(self):
-        pass
+        
+        def custom_training(self):
+            pass
 
 
     def initialize_memory(self):
@@ -365,7 +394,9 @@ class CNN3(ABC, nn.Module):
 
             case "write":
                 msg = self.print_test_results()
-                with open(filename, 'w') as f:
+                msg += '\n'
+                msg += "Number of params: " + str(self.num_param())
+                with open(filename+"_test_performance.txt", 'w') as f:
                     f.write(msg)
                 return msg
 
@@ -413,12 +444,23 @@ class CNN3(ABC, nn.Module):
 
     
     def save_model(self, path):
-        torch.save(self.state_dict(), path)
+        torch.save(self.state_dict(), path+".pt")
 
     
     def load_model(self, path):
-        self.load_state_dict(torch.load(path))
+        self.load_state_dict(torch.load(path+".pt"))
         self.eval()
 
     def num_param(self):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+    def write_configuration(self, filename, additional_info = "No"):
+
+        with open(filename+"_configuration.txt", 'a') as f:
+            f.write("Epochs: " + str(self.epochs) + '\n')
+            f.write("LR: ")
+            for lr in self.learning_rate:
+                f.write(str(lr) + " ")
+            f.write('\n')
+            f.write("Switch point: " + str(self.switch_point + '\n'))
+            f.write("Additional info: " + additional_info)
