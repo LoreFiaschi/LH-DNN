@@ -16,6 +16,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm 
 
 
+num_cores = 8
+torch.set_num_interop_threads(num_cores) # Inter-op parallelism
+torch.set_num_threads(num_cores) # Intra-op parallelism
+
+
 def c3_to_c1(y):
     if y < 2 or y > 7:
         return 0
@@ -190,16 +195,13 @@ class CNN3(ABC, nn.Module):
         self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.class_levels)
         self.num_push = 0
         
-        for epoch in tqdm(np.arange(9), desc="Training: "):
-            self.training_loop_body()
-
-        self.optimizer.param_groups[0]['lr'] = self.learning_rate[1]
-
-        for epoch in tqdm(np.arange(9, self.epochs), desc="Training: "):
-            self.training_loop_body()
+        self.custom_training()
 
         self.plot_training_loss(filename+"_train_loss.pdf")
         self.plot_test_accuracy(filename+"_test_accuracy_.pdf")
+
+    def custom_training(self):
+        pass
 
 
     def initialize_memory(self):
@@ -258,77 +260,62 @@ class CNN3(ABC, nn.Module):
                     self.total_c2_vs_c3_pred[predicted[i,1]] += 1
 
 
-    def print_test_results(self):
+    def test_results_to_text(self, ):
         str = ""
         
-        # print accuracy for each class        
+        # accuracy for each class        
         for i in np.arange(self.num_c_1):
             accuracy_c1 = 100 * float(self.correct_c1_pred[i]) / self.total_c1_pred[i]
-            m = f'Accuracy for class {self.labels_c_1[i]:5s}: {accuracy_c1:.2f} %'
-            str += m + '\n'
-            print(m)
+            str += f'Accuracy for class {self.labels_c_1[i]:5s}: {accuracy_c1:.2f} %'
+            str += '\n'
 
-        print("")
         str += '\n'
         
         for i in np.arange(self.num_c_2):
             accuracy_c2 = 100 * float(self.correct_c2_pred[i]) / self.total_c2_pred[i]
-            m = f'Accuracy for class {self.labels_c_2[i]:5s}: {accuracy_c2:.2f} %'
-            str += m + '\n'
-            print(m)
-
-        print("")
+            str += f'Accuracy for class {self.labels_c_2[i]:5s}: {accuracy_c2:.2f} %'
+            str += '\n'
+            
         str += '\n'
         
         for i in np.arange(self.num_c_3):
             accuracy_c3 = 100 * float(self.correct_c3_pred[i]) / self.total_c3_pred[i]
-            m = f'Accuracy for class {self.labels_c_3[i]:5s}: {accuracy_c3:.2f} %'
-            str += m + '\n'
-            print(m)
+            str += f'Accuracy for class {self.labels_c_3[i]:5s}: {accuracy_c3:.2f} %'
+            str += '\n'
             
-        # print accuracy for the whole dataset
-        print("")
+        # accuracy for the whole dataset
         str += '\n'
 
-        m = f'Accuracy on c1: {(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
-        str += m + '\n'
-        print(m)
-
-        m = f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
-        str += m + '\n'
-        print(m)
-
-        m = f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
-        str += m + '\n'
-        print(m)
-
-        print("")
+        str += f'Accuracy on c1: {(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
         str += '\n'
 
-        # print cross classes accuracy (tree)
+        str += f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
+        str += '\n'
+
+        str += f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
+        str += '\n'
+        
+        str += '\n'
+
+        # cross classes accuracy (tree)
         for i in np.arange(self.num_c_1):
             accuracy_c1_c2 = 100 * float(self.correct_c1_vs_c2_pred[i]) / self.total_c1_vs_c2_pred[i]
-            m = f'Cross-accuracy {self.labels_c_1[i]:5s} vs c2: {accuracy_c1_c2:.2f} %'
-            str += m + '\n'
-            print(m)
-        
-        print("")
+            str += f'Cross-accuracy {self.labels_c_1[i]:5s} vs c2: {accuracy_c1_c2:.2f} %'
+            str += '\n'
+            
         str += '\n'
         
         for i in np.arange(self.num_c_2):
             accuracy_c2_c3 = 100 * float(self.correct_c2_vs_c3_pred[i]) / self.total_c2_vs_c3_pred[i]
-            m = f'Cross-accuracy {self.labels_c_2[i]:5s} vs c3: {accuracy_c2_c3:.2f} %'
-            str += m + '\n'
-            print(m)
-
-        print("")
+            str += f'Cross-accuracy {self.labels_c_2[i]:5s} vs c3: {accuracy_c2_c3:.2f} %'
+            str += '\n'
+            
         str += '\n'
         
         for i in np.arange(self.num_c_1):
             accuracy_c1_c3 = 100 * float(self.correct_c1_vs_c3_pred[i]) / self.total_c1_vs_c3_pred[i]
-            m = f'Cross-accuracy {self.labels_c_1[i]:5s} vs c3: {accuracy_c1_c3:.2f} %'
-            str += m + '\n'
-            print(m)
+            str += f'Cross-accuracy {self.labels_c_1[i]:5s} vs c3: {accuracy_c1_c3:.2f} %'
+            str += '\n'
 
         return str
 
@@ -361,7 +348,7 @@ class CNN3(ABC, nn.Module):
         self.barplot(np.arange(self.num_c_3 + 1), accuracy_c3, (*self.labels_c_3, 'overall'), "Accuracy on the third level")
 
     
-    def test(self, mode = "print"):
+    def test(self, mode = "print", filename = None):
         self.initialize_memory()
         self.eval()
 
@@ -370,9 +357,18 @@ class CNN3(ABC, nn.Module):
         match mode:
             case "plot":
                 self.plot_test_results()
+
             case "print":
                 msg = self.print_test_results()
+                print(m)
                 return msg
+
+            case "write":
+                msg = self.print_test_results()
+                with open(filename, 'w') as f:
+                    f.write(msg)
+                return msg
+
             case "train":
                 accuracy_c1 = self.correct_c1_pred.sum() / self.total_c1_pred.sum()
                 accuracy_c2 = self.correct_c2_pred.sum() / self.total_c2_pred.sum()
@@ -381,6 +377,7 @@ class CNN3(ABC, nn.Module):
                 self.train()
 
                 return torch.tensor([accuracy_c1, accuracy_c2, accuracy_c3])
+                
             case _:
                 raise AttributeError("Test mode not available")
         
@@ -422,3 +419,6 @@ class CNN3(ABC, nn.Module):
     def load_model(self, path):
         self.load_state_dict(torch.load(path))
         self.eval()
+
+    def num_param(self):
+        return sum(p.numel() for p in self.parameters() if p.requires_grad)
