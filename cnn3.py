@@ -423,7 +423,8 @@ class CNN3(ABC, nn.Module):
         plt.legend()
         if filename is not None:
             plt.savefig(filename, bbox_inches='tight')
-        plt.show();
+        else:
+            plt.show();
 
     
     def plot_test_accuracy(self, filename = None):
@@ -438,7 +439,8 @@ class CNN3(ABC, nn.Module):
         plt.legend()
         if filename is not None:
             plt.savefig(filename, bbox_inches='tight')
-        plt.show();
+        else:
+            plt.show();
 
     
     def save_model(self, path):
