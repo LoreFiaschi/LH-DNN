@@ -20,126 +20,72 @@ num_cores = 8
 torch.set_num_interop_threads(num_cores) # Inter-op parallelism
 torch.set_num_threads(num_cores) # Intra-op parallelism
 
-class CIFAR10():
+num_class_c1 = 2
+num_class_c2 = 7
+num_class_c3 = 10
 
-	def __init__(self, batch_size):
-
-		self.num_class_c1 = 2
-		self.num_class_c2 = 7
-		self.num_class_c3 = 10
-		self.batch_size = batch_size
-
-		#--- coarse 1 classes ---
-		self.labels_c_1 = ('transport', 'animal')
-		#--- coarse 2 classes ---
-		self.labels_c_2 = ('sky', 'water', 'road', 'bird', 'reptile', 'pet', 'medium')
-		#--- fine classes ---
-		self.labels_c_3 = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-			   
-		transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-		coarser = Lambda(lambda y: torch.tensor([c3_to_c1(y), c3_to_c2(y), int(y)]))
-
-		self.batch_size = 128
-
-		trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
-
-		self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
-
-		testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
-
-		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
+#--- coarse 1 classes ---
+labels_c_1 = ('transport', 'animal')
+#--- coarse 2 classes ---
+labels_c_2 = ('sky', 'water', 'road', 'bird', 'reptile', 'pet', 'medium')
+#--- fine classes ---
+labels_c_3 = ('plane', 'car', 'bird', 'cat',
+           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-	def c3_to_c1(y):
-		if y < 2 or y > 7:
-			return 0
-		return 1
+def c3_to_c1(y):
+    if y < 2 or y > 7:
+        return 0
+    return 1
 
-	def c3_to_c2(y):
-		match y:
-			case 0:
-				return 0
-			case 1:
-				return 2
-			case 2:
-				return 3
-			case 3:
-				return 5
-			case 4:
-				return 6
-			case 5:
-				return 5
-			case 6:
-				return 4
-			case 7:
-				return 6
-			case 8:
-				return 1
-			case _:
-				return 2
+def c3_to_c2(y):
+    match y:
+        case 0:
+            return 0
+        case 1:
+            return 2
+        case 2:
+            return 3
+        case 3:
+            return 5
+        case 4:
+            return 6
+        case 5:
+            return 5
+        case 6:
+            return 4
+        case 7:
+            return 6
+        case 8:
+            return 1
+        case _:
+            return 2
 
-	def c2_to_c1(y):
-		if y < 3:
-			return 0
-		return 1
+def c2_to_c1(y):
+    if y < 3:
+        return 0
+    return 1
 
 
 
-class CIFAR100():
+transform = transforms.Compose(
+    [transforms.ToTensor(),
+     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-	def __init__(self, batch_size):
+coarser = Lambda(lambda y: torch.tensor([c3_to_c1(y), c3_to_c2(y), int(y)]))
 
-		self.num_class_c1 = 8
-		self.num_class_c2 = 20
-		self.num_class_c3 = 100
-		self.batch_size = batch_size
-			   
-		transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+batch_size = 128
 
-		coarser = Lambda(lambda y: torch.tensor([c3_to_c1(y), c3_to_c2(y), int(y)]))
+trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
 
-		self.batch_size = 128
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
 
-		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
+testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
 
-		self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
+testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 
-		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
 
-		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 
-	
-	def c3_to_c1(y):
-	    return c2_to_c1( c3_to_c2(y) )
-
-	def c3_to_c2(y):
-	    pass
-
-	def c2_to_c1(y):
-	
-	    if y == 0 or y == 1:
-	    	return 0
-	    	
-	    if y == 2 or y == 4 or y == 17:
-	    	return 1
-	    	
-	    if y == 3 or y == 5 or y == 6:
-	    	return 2
-	    
-	    if y == 7 or y == 13:
-	    	return 3
-	    
-	    if y == 8 or y == 11 or y == 12 or y == 15 or y == 16:
-	    	return 4
-	    	
-	    if y == 9 or y == 10:
-	    	return 5
-	    	
-	    if y == 14:
-	    	return 6
-	    	
-	    return 7
 
 
 
