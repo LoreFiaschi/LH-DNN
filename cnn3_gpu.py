@@ -16,7 +16,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm 
 
 
-num_cores = 8
+device = "cuda:0"
+num_cores = 16
 torch.set_num_interop_threads(num_cores) # Inter-op parallelism
 torch.set_num_threads(num_cores) # Intra-op parallelism
 
@@ -368,11 +369,11 @@ class CNN3(ABC, nn.Module):
 
 		W1 = self.layerb17.weight.clone().detach()
 		W2 = self.layerb27.weight.clone().detach()
-		ort2 = torch.empty_like(z)
-		ort3 = torch.empty_like(z)
+		ort2 = torch.empty_like(z, device = device)
+		ort3 = torch.empty_like(z, device = device)
 
 		for i, zi in enumerate(z):
-			Rk = torch.diag(torch.where(zi.clone().detach() != 0, 1.0, 0.0))
+			Rk = torch.diag(torch.where(zi.clone().detach() != 0, 1.0, 0.0)).to(device)
 			W1k = W1.mm(Rk)
 			W2k_ = W2.mm(Rk)
 			W2k = torch.vstack((W1k, W2k_))
@@ -384,11 +385,12 @@ class CNN3(ABC, nn.Module):
 		
 		return ort2, ort3, #prj2, ort2, prj3, ort3
 
+
 	def compute_othogonal(self, z, W, eps = 1e-8):
 		WWT = torch.matmul(W, W.T)
-		P = solve_matrix_system(WWT + torch.randn_like(WWT) * eps, torch.eye(W.size(0)))
+		P = solve_matrix_system(WWT + torch.randn_like(WWT, device = device) * eps, torch.eye(W.size(0), device = device))
 		P = torch.matmul(P, W)
-		P = torch.eye(W.size(1)) - torch.matmul(W.T, P)
+		P = torch.eye(W.size(1), device = device) - torch.matmul(W.T, P)
 		
 		return torch.matmul(z, P)
 		
@@ -396,8 +398,8 @@ class CNN3(ABC, nn.Module):
 	def predict_and_learn(self, batch, labels):
 		self.optimizer.zero_grad()
 		predict = self(batch)
-		loss_f = self.criterion(predict[0], labels[:,0]) + sum(sum(abs(self.layerb17.weight)))
-		loss_i1 = self.criterion(predict[1], labels[:,1]) + sum(sum(abs(self.layerb27.weight)))
+		loss_f = self.criterion(predict[0], labels[:,0])
+		loss_i1 = self.criterion(predict[1], labels[:,1])
 		loss_i2 = self.criterion(predict[2], labels[:,2])
 		
 		loss_f.backward(retain_graph=True)
@@ -406,19 +408,24 @@ class CNN3(ABC, nn.Module):
 
 		self.optimizer.step()
 
-		return torch.tensor([loss_f, loss_i1, loss_i2])
+		return torch.tensor([loss_f, loss_i1, loss_i2], device = device)
 
 
 	def train_model(self, verbose = False):
 		self.train()
 		
+		if device[:5] ==  "cuda:":
+			torch.backends.cudnn.benchmark = True
+		
 		for epoch in tqdm(np.arange(self.epochs), desc="Training: "):
 			#self.update_training_params(epoch)
 
 			if verbose:
-				running_loss = torch.zeros(self.dataset.class_levels)
+				running_loss = torch.zeros(self.dataset.class_levels, device = device)
 			
 			for iter, (batch, labels) in enumerate(self.dataset.trainloader):
+				batch = batch.to(device)
+				labels = labels.to(device)
 				loss = self.predict_and_learn(batch, labels)
 
 				if verbose:
@@ -432,9 +439,11 @@ class CNN3(ABC, nn.Module):
 
 
 	def training_loop_body(self):
-		running_loss = torch.zeros(self.dataset.class_levels)
+		running_loss = torch.zeros(self.dataset.class_levels, device = device)
 			
 		for iter, (batch, labels) in enumerate(self.dataset.trainloader):
+			batch = batch.to(device)
+			labels = labels.to(device)
 			loss = self.predict_and_learn(batch, labels)
 
 			running_loss += (loss - running_loss) / (iter+1)
@@ -448,9 +457,11 @@ class CNN3(ABC, nn.Module):
 	
 	def train_track(self, filename = ""):
 		self.train()
+		if device[:5] ==  "cuda:":
+			torch.backends.cudnn.benchmark = True
 		
-		self.loss_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels)
-		self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels)
+		self.loss_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels, device = device)
+		self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels, device = device)
 		self.num_push = 0
 
 		if self.custom_training:
@@ -502,6 +513,7 @@ class CNN3(ABC, nn.Module):
 	def collect_test_performance(self, mode):
 		with torch.no_grad():
 			for images, labels in self.dataset.testloader:
+				images = images.to(device)
 				predictions = self(images)
 				predicted = torch.zeros(predictions[0].size(0), self.dataset.class_levels, dtype=torch.long)
 				_, predicted[:,0] = torch.max(predictions[0], 1)

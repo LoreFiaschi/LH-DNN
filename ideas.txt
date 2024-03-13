@@ -3,3 +3,6 @@ usare un batch norm sulle predizioni del livello precedente per far apprendere m
 In generale capire meglio come integrare l'informazione del livello precedente
 
 usare norma 1 sull'ultimo layer per aumentare lo spazio di informazioni per le gerarchie successive
+
+
+Capire come è possibile che la versione per CIFAR10 abbia più parametri che per CIFAR100
