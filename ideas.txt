@@ -1,0 +1,5 @@
+usare un batch norm sulle predizioni del livello precedente per far apprendere meglio
+
+In generale capire meglio come integrare l'informazione del livello precedente
+
+usare norma 1 sull'ultimo layer per aumentare lo spazio di informazioni per le gerarchie successive

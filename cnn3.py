@@ -24,9 +24,10 @@ class CIFAR10():
 
 	def __init__(self, batch_size):
 
-		self.num_class_c1 = 2
-		self.num_class_c2 = 7
-		self.num_class_c3 = 10
+		self.class_levels = 3
+		self.num_c1 = 2
+		self.num_c2 = 7
+		self.num_c3 = 10
 		self.batch_size = batch_size
 
 		#--- coarse 1 classes ---
@@ -38,7 +39,7 @@ class CIFAR10():
 			   
 		transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-		coarser = Lambda(lambda y: torch.tensor([c3_to_c1(y), c3_to_c2(y), int(y)]))
+		coarser = Lambda(lambda y: torch.tensor([self.c3_to_c1(y), self.c3_to_c2(y), int(y)]))
 
 		self.batch_size = 128
 
@@ -51,12 +52,12 @@ class CIFAR10():
 		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 
 
-	def c3_to_c1(y):
+	def c3_to_c1(self, y):
 		if y < 2 or y > 7:
 			return 0
 		return 1
 
-	def c3_to_c2(y):
+	def c3_to_c2(self, y):
 		match y:
 			case 0:
 				return 0
@@ -79,7 +80,7 @@ class CIFAR10():
 			case _:
 				return 2
 
-	def c2_to_c1(y):
+	def c2_to_c1(self, y):
 		if y < 3:
 			return 0
 		return 1
@@ -90,14 +91,15 @@ class CIFAR100():
 
 	def __init__(self, batch_size):
 
-		self.num_class_c1 = 8
-		self.num_class_c2 = 20
-		self.num_class_c3 = 100
+		self.class_levels = 3
+		self.num_c1 = 8
+		self.num_c2 = 20
+		self.num_c3 = 100
 		self.batch_size = batch_size
 			   
 		transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-		coarser = Lambda(lambda y: torch.tensor([c3_to_c1(y), c3_to_c2(y), int(y)]))
+		coarser = Lambda(lambda y: torch.tensor([self.c3_to_c1(y), self.c3_to_c2(y), int(y)]))
 
 		self.batch_size = 128
 
@@ -108,416 +110,695 @@ class CIFAR100():
 		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
 
 		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
+		
+		self.labels_c3 = [
+			"apple",
+			"aquarium_fish",
+			"baby",
+			"bear",
+			"beaver",
+			"bed",
+			"bee",
+			"beetle",
+			"bicycle",
+			"bottle",
+			"bowl",
+			"boy",
+			"bridge",
+			"bus",
+			"butterfly",
+			"camel",
+			"can",
+			"castle",
+			"caterpillar",
+			"cattle",
+			"chair",
+			"chimpanzee",
+			"clock",
+			"cloud",
+			"cockroach",
+			"couch",
+			"crab",
+			"crocodile",
+			"cup",
+			"dinosaur",
+			"dolphin",
+			"elephant",
+			"flatfish",
+			"forest",
+			"fox",
+			"girl",
+			"hamster",
+			"house",
+			"kangaroo",
+			"keyboard",
+			"lamp",
+			"lawn_mower",
+			"leopard",
+			"lion",
+			"lizard",
+			"lobster",
+			"man",
+			"maple",
+			"motorcycle",
+			"mountain",
+			"mouse",
+			"mushroom",
+			"oak",
+			"orange",
+			"orchid",
+			"otter",
+			"palm",
+			"pear",
+			"pickup_truck",
+			"pine",
+			"plain",
+			"plate",
+			"poppy",
+			"porcupine",
+			"possum",
+			"rabbit",
+			"raccoon",
+			"ray",
+			"road",
+			"rocket",
+			"rose",
+			"sea",
+			"seal",
+			"shark",
+			"shrew",
+			"skunk",
+			"skyscraper",
+			"snail",
+			"snake",
+			"spider",
+			"squirrel",
+			"streetcar",
+			"sunflower",
+			"sweet_pepper",
+			"table",
+			"tank",
+			"telephone",
+			"television",
+			"tiger",
+			"tractor",
+			"train",
+			"trout",
+			"tulip",
+			"turtle",
+			"wardrobe",
+			"whale",
+			"willow",
+			"wolf",
+			"woman",
+			"worm"
+		]
 
 	
-	def c3_to_c1(y):
-	    return c2_to_c1( c3_to_c2(y) )
-
-	def c3_to_c2(y):
-	    pass
-
-	def c2_to_c1(y):
+		self.labels_c2 = [
+			"aquatic_mammals",
+			"fish",
+			"flowers",
+			"food_containers",
+			"fruit_and_vegetables",
+			"household_electrical_devices",
+			"household_furniture",
+			"insects",
+			"large_carnivores",
+			"large_man-made_outdoor_things",
+			"large_natural_outdoor_scenes",
+			"large_omnivores_and_herbivores",
+			"medium-sized_mammals",
+			"non-insect_invertebrates",
+			"people",
+			"reptiles",
+			"small_mammals",
+			"trees",
+			"vehicles_1",
+			"vehicles_2"
+		]
+		
+		self.labels_c1 = [
+			"water_animals",
+			"flora",
+			"tools",
+			"tiny_animals",
+			"animals",
+			"views",
+			"people",
+			"vehicles"
+		]
 	
-	    if y == 0 or y == 1:
-	    	return 0
-	    	
-	    if y == 2 or y == 4 or y == 17:
-	    	return 1
-	    	
-	    if y == 3 or y == 5 or y == 6:
-	    	return 2
-	    
-	    if y == 7 or y == 13:
-	    	return 3
-	    
-	    if y == 8 or y == 11 or y == 12 or y == 15 or y == 16:
-	    	return 4
-	    	
-	    if y == 9 or y == 10:
-	    	return 5
-	    	
-	    if y == 14:
-	    	return 6
-	    	
-	    return 7
+	def c3_to_c1(self, y):
+		return self.c2_to_c1( self.c3_to_c2(y) )
+
+	def c3_to_c2(self, y):
+	
+		if self.labels_c3[y] == "beaver" or self.labels_c3[y] == "dolphin" or self.labels_c3[y] == "otter" or self.labels_c3[y] == "seal" or self.labels_c3[y] == "whale":
+			return 0
+			
+		if self.labels_c3[y] == "aquarium_fish" or self.labels_c3[y] == "flatfish" or self.labels_c3[y] == "ray" or self.labels_c3[y] == "shark" or self.labels_c3[y] == "trout":
+			return 1
+			
+		if self.labels_c3[y] == "orchid" or self.labels_c3[y] == "poppy" or self.labels_c3[y] == "rose" or self.labels_c3[y] == "sunflower" or self.labels_c3[y] == "tulip":
+			return 2
+			
+		if self.labels_c3[y] == "bottle" or self.labels_c3[y] == "bowl" or self.labels_c3[y] == "can" or self.labels_c3[y] == "cup" or self.labels_c3[y] == "plate":
+			return 3
+	
+		if self.labels_c3[y] == "apple" or self.labels_c3[y] == "mushroom" or self.labels_c3[y] == "orange" or self.labels_c3[y] == "pear" or self.labels_c3[y] == "sweet_pepper":
+			return 4
+			
+		if self.labels_c3[y] == "clock" or self.labels_c3[y] == "keyboard" or self.labels_c3[y] == "lamp" or self.labels_c3[y] == "telephone" or self.labels_c3[y] == "television":
+			return 5
+			
+		if self.labels_c3[y] == "bed" or self.labels_c3[y] == "chair" or self.labels_c3[y] == "couch" or self.labels_c3[y] == "table" or self.labels_c3[y] == "wardrobe":
+			return 6
+			
+		if self.labels_c3[y] == "bee" or self.labels_c3[y] == "beetle" or self.labels_c3[y] == "butterfly" or self.labels_c3[y] == "caterpillar" or self.labels_c3[y] == "cockroach":
+			return 7
+			
+		if self.labels_c3[y] == "bear" or self.labels_c3[y] == "leopard" or self.labels_c3[y] == "lion" or self.labels_c3[y] == "tiger" or self.labels_c3[y] == "wolf":
+			return 8
+			
+		if self.labels_c3[y] == "bridge" or self.labels_c3[y] == "castle" or self.labels_c3[y] == "house" or self.labels_c3[y] == "road" or self.labels_c3[y] == "skyscraper":
+			return 9
+			
+		if self.labels_c3[y] == "cloud" or self.labels_c3[y] == "forest" or self.labels_c3[y] == "mountain" or self.labels_c3[y] == "plain" or self.labels_c3[y] == "sea":
+			return 10
+			
+		if self.labels_c3[y] == "camel" or self.labels_c3[y] == "cattle" or self.labels_c3[y] == "chimpanzee" or self.labels_c3[y] == "elephant" or self.labels_c3[y] == "kangaroo":
+			return 11
+			
+		if self.labels_c3[y] == "fox" or self.labels_c3[y] == "porcupine" or self.labels_c3[y] == "possum" or self.labels_c3[y] == "raccoon" or self.labels_c3[y] == "skunk":
+			return 12
+			
+		if self.labels_c3[y] == "crab" or self.labels_c3[y] == "lobster" or self.labels_c3[y] == "snail" or self.labels_c3[y] == "spider" or self.labels_c3[y] == "worm":
+			return 13
+			
+		if self.labels_c3[y] == "baby" or self.labels_c3[y] == "boy" or self.labels_c3[y] == "girl" or self.labels_c3[y] == "man" or self.labels_c3[y] == "woman":
+			return 14
+			
+		if self.labels_c3[y] == "crocodile" or self.labels_c3[y] == "dinosaur" or self.labels_c3[y] == "lizard" or self.labels_c3[y] == "snake" or self.labels_c3[y] == "turtle":
+			return 15
+			
+		if self.labels_c3[y] == "hamster" or self.labels_c3[y] == "mouse" or self.labels_c3[y] == "rabbit" or self.labels_c3[y] == "shrew" or self.labels_c3[y] == "squirrel":
+			return 16
+			
+		if self.labels_c3[y] == "maple" or self.labels_c3[y] == "oak" or self.labels_c3[y] == "palm" or self.labels_c3[y] == "pine" or self.labels_c3[y] == "willow":
+			return 17
+			
+		if self.labels_c3[y] == "bicycle" or self.labels_c3[y] == "bus" or self.labels_c3[y] == "motorcycle" or self.labels_c3[y] == "pickup_truck" or self.labels_c3[y] == "train":
+			return 18
+			
+		if self.labels_c3[y] == "lawn_mower" or self.labels_c3[y] == "rocket" or self.labels_c3[y] == "streetcar" or self.labels_c3[y] == "tank" or self.labels_c3[y] == "tractor":
+			return 19
+			
+		raise Exception(f'Label {y} does not exist.')
+
+	def c2_to_c1(self, y):
+	
+		if y == 0 or y == 1:
+			return 0
+			
+		if y == 2 or y == 4 or y == 17:
+			return 1
+			
+		if y == 3 or y == 5 or y == 6:
+			return 2
+		
+		if y == 7 or y == 13:
+			return 3
+		
+		if y == 8 or y == 11 or y == 12 or y == 15 or y == 16:
+			return 4
+			
+		if y == 9 or y == 10:
+			return 5
+			
+		if y == 14:
+			return 6
+			
+		return 7
 
 
 
 class CNN3(ABC, nn.Module):
-    def __init__(self, learning_rate, momentum, nesterov, trainloader, testloader, 
-                 epochs, num_class_c1, num_class_c2, num_class_c3, labels_c_1, labels_c_2, labels_c_3, 
-                 every_print = 512, switch_point = None, custom_training = False, training_size = 50000):
-        
-        super().__init__()
-        self.trainloader = trainloader
-        self.testloader = testloader
-        self.learning_rate = learning_rate
-        self.momentum = momentum
-        self.nesterov = nesterov
-        self.activation = F.relu
-        self.class_levels = 3
-        self.num_c_1 = num_class_c1
-        self.num_c_2 = num_class_c2
-        self.num_c_3 = num_class_c3
-        self.epochs = epochs
-        self.switch_point = switch_point if (switch_point is None or switch_point < epochs) else epochs
-        self.custom_training = custom_training
-        self.labels_c_1 = labels_c_1
-        self.labels_c_2 = labels_c_2
-        self.labels_c_3 = labels_c_3
-        self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
-        self.track_size = int( training_size / batch_size / every_print ) 
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, training_size = 50000):
+		
+		super().__init__()
+		self.dataset = dataset
+		self.learning_rate = learning_rate
+		self.momentum = momentum
+		self.nesterov = nesterov
+		self.activation = F.relu
+		self.epochs = epochs
+		self.switch_point = switch_point if (switch_point is None or switch_point < epochs) else epochs
+		self.custom_training = custom_training
+		self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
+		self.track_size = int( training_size / self.dataset.batch_size / every_print ) 
 
-    
-    def forward(self, x):
-        pass
+	
+	def forward(self, x):
+		pass
 
 
-    # Assumption: W is column full rank. 
-    def project(self, z): # https://math.stackexchange.com/questions/4021915/projection-orthogonal-to-two-vectors
+	# Assumption: W is column full rank. 
+	def project(self, z): # https://math.stackexchange.com/questions/4021915/projection-orthogonal-to-two-vectors
 
-        W1 = self.layerb17.weight.clone().detach()
-        W2 = self.layerb27.weight.clone().detach()
-        ort2 = torch.empty_like(z)
-        ort3 = torch.empty_like(z)
+		W1 = self.layerb17.weight.clone().detach()
+		W2 = self.layerb27.weight.clone().detach()
+		ort2 = torch.empty_like(z)
+		ort3 = torch.empty_like(z)
 
-        for i, zi in enumerate(z):
-            Rk = torch.diag(torch.where(zi.clone().detach() != 0, 1.0, 0.0))
-            W1k = W1.mm(Rk)
-            W2k_ = W2.mm(Rk)
-            W2k = torch.vstack((W1k, W2k_))
-            ort2[i,:] = self.compute_othogonal(zi, W1k)
-            ort3[i,:] = self.compute_othogonal(zi, W2k)
-            
-        #prj2 = z.clone().detach() - ort2.clone().detach()
-        #prj3 = z.clone().detach() - ort3.clone().detach()
-        
-        return ort2, ort3, #prj2, ort2, prj3, ort3
+		for i, zi in enumerate(z):
+			Rk = torch.diag(torch.where(zi.clone().detach() != 0, 1.0, 0.0))
+			W1k = W1.mm(Rk)
+			W2k_ = W2.mm(Rk)
+			W2k = torch.vstack((W1k, W2k_))
+			ort2[i,:] = self.compute_othogonal(zi, W1k)
+			ort3[i,:] = self.compute_othogonal(zi, W2k)
+			
+		#prj2 = z.clone().detach() - ort2.clone().detach()
+		#prj3 = z.clone().detach() - ort3.clone().detach()
+		
+		return ort2, ort3, #prj2, ort2, prj3, ort3
 
-    def compute_othogonal(self, z, W, eps = 1e-8):
-        WWT = torch.matmul(W, W.T)
-        P = solve_matrix_system(WWT + torch.randn_like(WWT) * eps, torch.eye(W.size(0)))
-        P = torch.matmul(P, W)
-        P = torch.eye(W.size(1)) - torch.matmul(W.T, P)
-        
-        return torch.matmul(z, P)
-        
-    
-    def predict_and_learn(self, batch, labels):
-        self.optimizer.zero_grad()
-        predict = self(batch)
-        loss_f = self.criterion(predict[0], labels[:,0])
-        loss_i1 = self.criterion(predict[1], labels[:,1])
-        loss_i2 = self.criterion(predict[2], labels[:,2])
-        
-        loss_f.backward(retain_graph=True)
-        loss_i1.backward(retain_graph=True)
-        loss_i2.backward()
+	def compute_othogonal(self, z, W, eps = 1e-8):
+		WWT = torch.matmul(W, W.T)
+		P = solve_matrix_system(WWT + torch.randn_like(WWT) * eps, torch.eye(W.size(0)))
+		P = torch.matmul(P, W)
+		P = torch.eye(W.size(1)) - torch.matmul(W.T, P)
+		
+		return torch.matmul(z, P)
+		
+	
+	def predict_and_learn(self, batch, labels):
+		self.optimizer.zero_grad()
+		predict = self(batch)
+		loss_f = self.criterion(predict[0], labels[:,0])
+		loss_i1 = self.criterion(predict[1], labels[:,1])
+		loss_i2 = self.criterion(predict[2], labels[:,2])
+		
+		loss_f.backward(retain_graph=True)
+		loss_i1.backward(retain_graph=True)
+		loss_i2.backward()
 
-        self.optimizer.step()
+		self.optimizer.step()
 
-        return torch.tensor([loss_f, loss_i1, loss_i2])
-
-
-    def train_model(self, verbose = False):
-        self.train()
-        
-        for epoch in tqdm(np.arange(self.epochs), desc="Training: "):
-            #self.update_training_params(epoch)
-
-            if verbose:
-                running_loss = torch.zeros(self.class_levels)
-            
-            for iter, (batch, labels) in enumerate(self.trainloader):
-                loss = self.predict_and_learn(batch, labels)
-
-                if verbose:
-                    running_loss += (loss - running_loss) / (iter+1)
-                    if (iter + 1) & self.every_print == 0:
-                        print(f'[{epoch + 1}] loss_f : {running_loss[0] :.3f}')
-                        print(f'[{epoch + 1}] loss_i1: {running_loss_[1] :.3f}')
-                        print(f'[{epoch + 1}] loss_i2: {running_loss_[2] :.3f}')
-                        for i in np.arange(self.class_levels):
-                            running_loss[i] = 0.0
+		return torch.tensor([loss_f, loss_i1, loss_i2])
 
 
-    def training_loop_body(self):
-        running_loss = torch.zeros(self.class_levels)
-            
-        for iter, (batch, labels) in enumerate(self.trainloader):
-            loss = self.predict_and_learn(batch, labels)
+	def train_model(self, verbose = False):
+		self.train()
+		
+		for epoch in tqdm(np.arange(self.epochs), desc="Training: "):
+			#self.update_training_params(epoch)
 
-            running_loss += (loss - running_loss) / (iter+1)
-            if (iter + 1) & self.every_print == 0:
-                self.loss_track[self.num_push, :] = running_loss
-                self.accuracy_track[self.num_push, :] = self.test(mode = "train")
-                self.num_push += 1
-                for i in np.arange(self.class_levels):
-                        running_loss[i] = 0.0
+			if verbose:
+				running_loss = torch.zeros(self.dataset.class_levels)
+			
+			for iter, (batch, labels) in enumerate(self.dataset.trainloader):
+				loss = self.predict_and_learn(batch, labels)
 
-    
-    def train_track(self, filename = ""):
-        self.train()
-        
-        self.loss_track = torch.zeros(self.epochs * self.track_size, self.class_levels)
-        self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.class_levels)
-        self.num_push = 0
-
-        if self.custom_training:
-          self.custom_training_f()
-            
-        elif self.switch_point is None:
-            for epoch in tqdm(np.arange(9), desc="Training: "):
-                self.training_loop_body()
-                
-        else:
-            for epoch in tqdm(np.arange(self.switch_point), desc="Training: "):
-                self.training_loop_body()
-    
-            self.optimizer.param_groups[0]['lr'] = self.learning_rate[1]
-    
-            for epoch in tqdm(np.arange(self.switch_point, self.epochs), desc="Training: "):
-                self.training_loop_body()
-
-        self.plot_training_loss(filename+"_train_loss.pdf")
-        self.plot_test_accuracy(filename+"_test_accuracy_.pdf")
-
-        
-        def custom_training_f(self):
-            pass
+				if verbose:
+					running_loss += (loss - running_loss) / (iter+1)
+					if (iter + 1) & self.every_print == 0:
+						print(f'[{epoch + 1}] loss_f : {running_loss[0] :.3f}')
+						print(f'[{epoch + 1}] loss_i1: {running_loss_[1] :.3f}')
+						print(f'[{epoch + 1}] loss_i2: {running_loss_[2] :.3f}')
+						for i in np.arange(self.dataset.class_levels):
+							running_loss[i] = 0.0
 
 
-    def initialize_memory(self):
-        self.correct_c1_pred = torch.zeros(self.num_c_1)
-        self.total_c1_pred = torch.zeros_like(self.correct_c1_pred)
-        
-        self.correct_c2_pred = torch.zeros(self.num_c_2)
-        self.total_c2_pred = torch.zeros_like(self.correct_c2_pred)
-        
-        self.correct_c3_pred = torch.zeros(self.num_c_3)
-        self.total_c3_pred = torch.zeros_like(self.correct_c3_pred)
+	def training_loop_body(self):
+		running_loss = torch.zeros(self.dataset.class_levels)
+			
+		for iter, (batch, labels) in enumerate(self.dataset.trainloader):
+			loss = self.predict_and_learn(batch, labels)
 
-        self.correct_c1_vs_c2_pred = torch.zeros(self.num_c_1)
-        self.total_c1_vs_c2_pred = torch.zeros_like(self.correct_c1_vs_c2_pred)
+			running_loss += (loss - running_loss) / (iter+1)
+			if (iter + 1) & self.every_print == 0:
+				self.loss_track[self.num_push, :] = running_loss
+				self.accuracy_track[self.num_push, :] = self.test(mode = "train")
+				self.num_push += 1
+				for i in np.arange(self.dataset.class_levels):
+						running_loss[i] = 0.0
 
-        self.correct_c2_vs_c3_pred = torch.zeros(self.num_c_2)
-        self.total_c2_vs_c3_pred = torch.zeros_like(self.correct_c2_vs_c3_pred)
+	
+	def train_track(self, filename = ""):
+		self.train()
+		
+		self.loss_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels)
+		self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels)
+		self.num_push = 0
 
-        self.correct_c1_vs_c3_pred = torch.zeros(self.num_c_1)
-        self.total_c1_vs_c3_pred = torch.zeros_like(self.correct_c1_vs_c3_pred)
+		if self.custom_training:
+		  self.custom_training_f()
+			
+		elif self.switch_point is None:
+			for epoch in tqdm(np.arange(9), desc="Training: "):
+				self.training_loop_body()
+				
+		else:
+			for epoch in tqdm(np.arange(self.switch_point), desc="Training: "):
+				self.training_loop_body()
+	
+			self.optimizer.param_groups[0]['lr'] = self.learning_rate[1]
+	
+			for epoch in tqdm(np.arange(self.switch_point, self.epochs), desc="Training: "):
+				self.training_loop_body()
 
-    
-    def collect_test_performance(self):
-        with torch.no_grad():
-            for images, labels in self.testloader:
-                predictions = self(images)
-                predicted = torch.zeros(predictions[0].size(0), self.class_levels, dtype=torch.long)
-                _, predicted[:,0] = torch.max(predictions[0], 1)
-                _, predicted[:,1] = torch.max(predictions[1], 1)
-                _, predicted[:,2] = torch.max(predictions[2], 1)
+		self.plot_training_loss(filename+"_train_loss.pdf")
+		self.plot_test_accuracy(filename+"_test_accuracy_.pdf")
 
-                for i in np.arange(predictions[0].size(0)):
-                    if labels[i,0] == predicted[i,0]:
-                        self.correct_c1_pred[labels[i,0]] += 1
-                        
-                    if labels[i,1] == predicted[i,1]:
-                        self.correct_c2_pred[labels[i,1]] += 1
-
-                    if labels[i,2] == predicted[i,2]:
-                        self.correct_c3_pred[labels[i,2]] += 1
-
-                    if predicted[i,1] == c3_to_c2(predicted[i,2]):
-                        self.correct_c2_vs_c3_pred[predicted[i,1]] += 1
-
-                    if predicted[i,0] == c3_to_c1(predicted[i,2]):
-                        self.correct_c1_vs_c3_pred[predicted[i,0]] += 1
-
-                    if predicted[i,0] == c2_to_c1(predicted[i,1]):
-                        self.correct_c1_vs_c2_pred[predicted[i,0]] += 1
-                        
-                    self.total_c1_pred[labels[i,0]] += 1
-                    self.total_c2_pred[labels[i,1]] += 1
-                    self.total_c3_pred[labels[i,2]] += 1
-                    self.total_c1_vs_c3_pred[predicted[i,0]] += 1
-                    self.total_c1_vs_c2_pred[predicted[i,0]] += 1
-                    self.total_c2_vs_c3_pred[predicted[i,1]] += 1
+		
+	def custom_training_f(self):
+		pass
 
 
-    def test_results_to_text(self, ):
-        str = ""
-        
-        # accuracy for each class        
-        for i in np.arange(self.num_c_1):
-            accuracy_c1 = 100 * float(self.correct_c1_pred[i]) / self.total_c1_pred[i]
-            str += f'Accuracy for class {self.labels_c_1[i]:5s}: {accuracy_c1:.2f} %'
-            str += '\n'
+	def initialize_memory(self, mode):
+		self.correct_c1_pred = torch.zeros(self.dataset.num_c1)
+		self.total_c1_pred = torch.zeros_like(self.correct_c1_pred)
+		
+		self.correct_c2_pred = torch.zeros(self.dataset.num_c2)
+		self.total_c2_pred = torch.zeros_like(self.correct_c2_pred)
+		
+		self.correct_c3_pred = torch.zeros(self.dataset.num_c3)
+		self.total_c3_pred = torch.zeros_like(self.correct_c3_pred)
+		
+		if mode != "train":
+		
+			self.correct_c1_vs_c2_pred = torch.zeros(self.dataset.num_c1)
+			self.total_c1_vs_c2_pred = torch.zeros_like(self.correct_c1_vs_c2_pred)
+			
+			self.correct_c2_vs_c3_pred = torch.zeros(self.dataset.num_c2)
+			self.total_c2_vs_c3_pred = torch.zeros_like(self.correct_c2_vs_c3_pred)
 
-        str += '\n'
-        
-        for i in np.arange(self.num_c_2):
-            accuracy_c2 = 100 * float(self.correct_c2_pred[i]) / self.total_c2_pred[i]
-            str += f'Accuracy for class {self.labels_c_2[i]:5s}: {accuracy_c2:.2f} %'
-            str += '\n'
-            
-        str += '\n'
-        
-        for i in np.arange(self.num_c_3):
-            accuracy_c3 = 100 * float(self.correct_c3_pred[i]) / self.total_c3_pred[i]
-            str += f'Accuracy for class {self.labels_c_3[i]:5s}: {accuracy_c3:.2f} %'
-            str += '\n'
-            
-        # accuracy for the whole dataset
-        str += '\n'
+			self.correct_c1_vs_c3_pred = torch.zeros(self.dataset.num_c1)
+			self.total_c1_vs_c3_pred = torch.zeros_like(self.correct_c1_vs_c3_pred)
 
-        str += f'Accuracy on c1: {(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
-        str += '\n'
+	
+	def collect_test_performance(self, mode):
+		with torch.no_grad():
+			for images, labels in self.dataset.testloader:
+				predictions = self(images)
+				predicted = torch.zeros(predictions[0].size(0), self.dataset.class_levels, dtype=torch.long)
+				_, predicted[:,0] = torch.max(predictions[0], 1)
+				_, predicted[:,1] = torch.max(predictions[1], 1)
+				_, predicted[:,2] = torch.max(predictions[2], 1)
 
-        str += f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
-        str += '\n'
+				for i in np.arange(predictions[0].size(0)):
+					if labels[i,0] == predicted[i,0]:
+						self.correct_c1_pred[labels[i,0]] += 1
+						
+					if labels[i,1] == predicted[i,1]:
+						self.correct_c2_pred[labels[i,1]] += 1
 
-        str += f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
-        str += '\n'
-        
-        str += '\n'
-
-        # cross classes accuracy (tree)
-        for i in np.arange(self.num_c_1):
-            accuracy_c1_c2 = 100 * float(self.correct_c1_vs_c2_pred[i]) / self.total_c1_vs_c2_pred[i]
-            str += f'Cross-accuracy {self.labels_c_1[i]:9s} vs c2: {accuracy_c1_c2:.2f} %'
-            str += '\n'
-            
-        str += '\n'
-        
-        for i in np.arange(self.num_c_2):
-            accuracy_c2_c3 = 100 * float(self.correct_c2_vs_c3_pred[i]) / self.total_c2_vs_c3_pred[i]
-            str += f'Cross-accuracy {self.labels_c_2[i]:7s} vs c3: {accuracy_c2_c3:.2f} %'
-            str += '\n'
-            
-        str += '\n'
-        
-        for i in np.arange(self.num_c_1):
-            accuracy_c1_c3 = 100 * float(self.correct_c1_vs_c3_pred[i]) / self.total_c1_vs_c3_pred[i]
-            str += f'Cross-accuracy {self.labels_c_1[i]:9s} vs c3: {accuracy_c1_c3:.2f} %'
-            str += '\n'
-
-        return str
+					if labels[i,2] == predicted[i,2]:
+						self.correct_c3_pred[labels[i,2]] += 1
+						
+					self.total_c1_pred[labels[i,0]] += 1
+					self.total_c2_pred[labels[i,1]] += 1
+					self.total_c3_pred[labels[i,2]] += 1
+					
+					if mode != "train":
+						if predicted[i,1] == self.dataset.c3_to_c2(predicted[i,2]):
+							self.correct_c2_vs_c3_pred[predicted[i,1]] +=1
+							
+						if predicted[i,0] == self.dataset.c3_to_c1(predicted[i,2]):
+							self.correct_c1_vs_c3_pred[predicted[i,0]] += 1
+							
+						if predicted[i,0] == self.dataset.c2_to_c1(predicted[i,1]):
+							self.correct_c1_vs_c2_pred[predicted[i,0]] += 1
+							
+						self.total_c1_vs_c3_pred[predicted[i,0]] += 1
+						self.total_c1_vs_c2_pred[predicted[i,0]] += 1
+						self.total_c2_vs_c3_pred[predicted[i,1]] += 1
 
 
-    def barplot(self, x, accuracy, labels, title):
-        plt.bar(x, accuracy, tick_label = labels)
-        plt.xlabel("Classes")
-        plt.ylabel("Accuracy")
-        plt.title(title)
-        plt.show();
+	def test_results_to_text(self):
+	
+		if self.dataset.num_c3 <= 20:
+			return self.test_results_to_text_s20()
+		
+		return self.test_results_to_text_l20()
 
-    
-    def plot_test_results(self):
-        # accuracy for each class
-        accuracy_c1 = torch.empty(self.num_c_1)
-        for i in np.arange(self.num_c_1):
-            accuracy_c1[i] = float(self.correct_c1_pred[i]) / self.total_c1_pred[i]
-        self.barplot(np.arange(self.num_c_1), accuracy_c1, self.labels_c_1, "Accuracy on the first level")
+	
+	def test_results_to_text_s20(self):
+		str = ""
+		
+		# accuracy for each class		
+		for i in np.arange(self.dataset.num_c1):
+			accuracy_c1 = 100 * float(self.correct_c1_pred[i]) / self.total_c1_pred[i]
+			str += f'Accuracy for class {self.dataset.labels_c1[i]:5s}: {accuracy_c1:.2f} %'
+			str += '\n'
 
-        accuracy_c2 = torch.empty(self.num_c_2 + 1)
-        for i in np.arange(self.num_c_2):
-            accuracy_c2[i] = float(self.correct_c2_pred[i]) / self.total_c2_pred[i]
-        accuracy_c2[self.num_c_2] = self.correct_c2_pred.sum() / self.total_c2_pred.sum()
-        self.barplot(np.arange(self.num_c_2 + 1), accuracy_c2, (*self.labels_c_2, 'overall'), "Accuracy on the second level")
+		str += '\n'
+		
+		for i in np.arange(self.dataset.num_c2):
+			accuracy_c2 = 100 * float(self.correct_c2_pred[i]) / self.total_c2_pred[i]
+			str += f'Accuracy for class {self.dataset.labels_c2[i]:5s}: {accuracy_c2:.2f} %'
+			str += '\n'
+			
+		str += '\n'
+		
+		for i in np.arange(self.dataset.num_c3):
+			accuracy_c3 = 100 * float(self.correct_c3_pred[i]) / self.total_c3_pred[i]
+			str += f'Accuracy for class {self.dataset.labels_c3[i]:5s}: {accuracy_c3:.2f} %'
+			str += '\n'
+			
+		# accuracy for the whole dataset
+		str += '\n'
 
-        accuracy_c3 = torch.empty(self.num_c_3 + 1)
-        for i in np.arange(self.num_c_3):
-            accuracy_c3[i] = float(self.correct_c3_pred[i]) / self.total_c3_pred[i]
-        accuracy_c3[self.num_c_3] = self.correct_c3_pred.sum() / self.total_c3_pred.sum()
-        self.barplot(np.arange(self.num_c_3 + 1), accuracy_c3, (*self.labels_c_3, 'overall'), "Accuracy on the third level")
+		str += f'Accuracy on c1: {(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
+		str += '\n'
 
-    
-    def test(self, mode = "print", filename = None):
-        self.initialize_memory()
-        self.eval()
+		str += f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
+		str += '\n'
 
-        self.collect_test_performance()
+		str += f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
+		str += '\n'
+		
+		str += '\n'
 
-        match mode:
-            case "plot":
-                self.plot_test_results()
+		# cross classes accuracy (tree)
+		for i in np.arange(self.dataset.num_c1):
+			accuracy_c1_c2 = 100 * float(self.correct_c1_vs_c2_pred[i]) / self.total_c1_vs_c2_pred[i]
+			str += f'Cross-accuracy {self.dataset.labels_c1[i]:9s} vs c2: {accuracy_c1_c2:.2f} %'
+			str += '\n'
+			
+		str += '\n'
+		
+		for i in np.arange(self.dataset.num_c2):
+			accuracy_c2_c3 = 100 * float(self.correct_c2_vs_c3_pred[i]) / self.total_c2_vs_c3_pred[i]
+			str += f'Cross-accuracy {self.dataset.labels_c2[i]:7s} vs c3: {accuracy_c2_c3:.2f} %'
+			str += '\n'
+			
+		str += '\n'
+		
+		for i in np.arange(self.dataset.num_c1):
+			accuracy_c1_c3 = 100 * float(self.correct_c1_vs_c3_pred[i]) / self.total_c1_vs_c3_pred[i]
+			str += f'Cross-accuracy {self.dataset.labels_c1[i]:9s} vs c3: {accuracy_c1_c3:.2f} %'
+			str += '\n'
 
-            case "print":
-                msg = self.test_results_to_text()
-                print(m)
-                return msg
+		return str, str
+		
+		
+	def test_results_to_text_l20(self):
+		str_bot = ""
+		str = ""
+		
+		# accuracy for each class
+		for i in np.arange(self.dataset.num_c1):
+			accuracy_c1 = 100 * float(self.correct_c1_pred[i]) / self.total_c1_pred[i]
+			str += f'Accuracy for class {self.dataset.labels_c1[i]:5s}: {accuracy_c1:.2f} %'
+			str += '\n'
+			
+		str += '\n'
+		
+		for i in np.arange(self.dataset.num_c2):
+			accuracy_c2 = 100 * float(self.correct_c2_pred[i]) / self.total_c2_pred[i]
+			str += f'Accuracy for class {self.dataset.labels_c2[i]:5s}: {accuracy_c2:.2f} %'
+			str += '\n'
+			
+		str += '\n'
+		
+		for i in np.arange(self.dataset.num_c3):
+			accuracy_c3 = 100 * float(self.correct_c3_pred[i]) / self.total_c3_pred[i]
+			str += f'Accuracy for class {self.dataset.labels_c3[i]:5s}: {accuracy_c3:.2f} %'
+			str += '\n'
+			
+		# accuracy for the whole dataset
+		str += '\n'
 
-            case "write":
-                msg = self.test_results_to_text()
-                with open(filename+"_test_performance.txt", 'w') as f:
-                    f.write(msg)
-                return msg
+		str += f'Accuracy on c1: {(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
+		str += '\n'
 
-            case "train":
-                accuracy_c1 = self.correct_c1_pred.sum() / self.total_c1_pred.sum()
-                accuracy_c2 = self.correct_c2_pred.sum() / self.total_c2_pred.sum()
-                accuracy_c3 = self.correct_c3_pred.sum() / self.total_c3_pred.sum()
+		str_bot += f'Accuracy on c1: {(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
+		str_bot += '\n'
 
-                self.train()
+		str += f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
+		str += '\n'
 
-                return torch.tensor([accuracy_c1, accuracy_c2, accuracy_c3])
-                
-            case _:
-                raise AttributeError("Test mode not available")
-        
-    
-    def plot_training_loss(self, filename = None):
-        plt.figure(figsize=(12, 6))
-        plt.plot(np.linspace(1, self.epochs, self.loss_track.size(0)), self.loss_track[:, 0].numpy(), label = "First level")
-        plt.plot(np.linspace(1, self.epochs, self.loss_track.size(0)), self.loss_track[:, 1].numpy(), label = "Second level")
-        plt.plot(np.linspace(1, self.epochs, self.loss_track.size(0)), self.loss_track[:, 2].numpy(), label = "Third level")
-        plt.title("Training loss")
-        plt.xlabel("Epochs")
-        plt.ylabel("Error")
-        plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
-        plt.legend()
-        if filename is not None:
-            plt.savefig(filename, bbox_inches='tight')
-        else:
-            plt.show();
+		str_bot += f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
+		str_bot += '\n'
 
-    
-    def plot_test_accuracy(self, filename = None):
-        plt.figure(figsize=(12, 6))
-        plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.accuracy_track[:, 0].numpy(), label = "First level")
-        plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.accuracy_track[:, 1].numpy(), label = "Second level")
-        plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.accuracy_track[:, 2].numpy(), label = "Third level")
-        plt.title("Test accuracy")
-        plt.xlabel("Epochs")
-        plt.ylabel("Accuracy")
-        plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
-        plt.legend()
-        if filename is not None:
-            plt.savefig(filename, bbox_inches='tight')
-        else:
-            plt.show();
+		str += f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
+		str += '\n'
 
-    
-    def save_model(self, path):
-        torch.save(self.state_dict(), path+".pt")
+		str_bot += f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
+		str_bot += '\n'
 
-    
-    def load_model(self, path):
-        self.load_state_dict(torch.load(path+".pt"))
-        self.eval()
+		str += '\n'
+		str_bot += '\n'
 
-    def num_param(self):
-        return sum(p.numel() for p in self.parameters() if p.requires_grad)
+		# cross classes accuracy (tree)
+		for i in np.arange(self.dataset.num_c1):
+			accuracy_c1_c2 = 100 * float(self.correct_c1_vs_c2_pred[i]) / self.total_c1_vs_c2_pred[i]
+			str += f'Cross-accuracy {self.dataset.labels_c1[i]:9s} vs c2: {accuracy_c1_c2:.2f} %'
+			str += '\n'
+			
+		str += '\n'
+		
+		for i in np.arange(self.dataset.num_c2):
+			accuracy_c2_c3 = 100 * float(self.correct_c2_vs_c3_pred[i]) / self.total_c2_vs_c3_pred[i]
+			str += f'Cross-accuracy {self.dataset.labels_c2[i]:7s} vs c3: {accuracy_c2_c3:.2f} %'
+			str += '\n'
+			
+		str += '\n'
+		
+		for i in np.arange(self.dataset.num_c1):
+			accuracy_c1_c3 = 100 * float(self.correct_c1_vs_c3_pred[i]) / self.total_c1_vs_c3_pred[i]
+			str += f'Cross-accuracy {self.dataset.labels_c1[i]:9s} vs c3: {accuracy_c1_c3:.2f} %'
+			str += '\n'
+			
+			
+		str_bot += f'Cross-accuracy c1 vs c2: {100 * float(self.correct_c1_vs_c2_pred.sum()) / self.total_c1_vs_c2_pred.sum():.2f} %'
+		str_bot += '\n'
+		str_bot += f'Cross-accuracy c2 vs c3: {100 * float(self.correct_c2_vs_c3_pred.sum()) / self.total_c2_vs_c3_pred.sum():.2f} %'
+		str_bot += '\n'
+		str_bot += f'Cross-accuracy c1 vs c3: {100 * float(self.correct_c1_vs_c3_pred.sum()) / self.total_c1_vs_c3_pred.sum():.2f} %'
+		str_bot += '\n'
 
-    def write_configuration(self, filename, additional_info = "No"):
-        msg = ""
-        msg += "Epochs: " + str(self.epochs) + "\n\n"
-        msg += "LR: " 
-        for lr in self.learning_rate:
-            msg += str(lr) + " "
-        msg += "\n\n"
-        msg += "Switch point: " + str(self.switch_point) + "\n\n"
-        msg += "Number of params: " + str(self.num_param()) + "\n\n"
-        msg += "Additional info: " + additional_info
-        
-        with open(filename+"_configuration.txt", 'w') as f:
-            f.write(msg)
+		return str, str_bot
+		
+
+	def barplot(self, x, accuracy, labels, title):
+		plt.bar(x, accuracy, tick_label = labels)
+		plt.xlabel("Classes")
+		plt.ylabel("Accuracy")
+		plt.title(title)
+		plt.show();
+
+	
+	def plot_test_results(self):
+		# accuracy for each class
+		accuracy_c1 = torch.empty(self.dataset.num_c1)
+		for i in np.arange(self.dataset.num_c1):
+			accuracy_c1[i] = float(self.correct_c1_pred[i]) / self.total_c1_pred[i]
+		self.barplot(np.arange(self.dataset.num_c1), accuracy_c1, self.dataset.labels_c1, "Accuracy on the first level")
+
+		accuracy_c2 = torch.empty(self.dataset.num_c2 + 1)
+		for i in np.arange(self.dataset.num_c2):
+			accuracy_c2[i] = float(self.correct_c2_pred[i]) / self.total_c2_pred[i]
+		accuracy_c2[self.dataset.num_c2] = self.correct_c2_pred.sum() / self.total_c2_pred.sum()
+		self.barplot(np.arange(self.dataset.num_c2 + 1), accuracy_c2, (*self.dataset.labels_c2, 'overall'), "Accuracy on the second level")
+
+		accuracy_c3 = torch.empty(self.dataset.num_c3 + 1)
+		for i in np.arange(self.dataset.num_c3):
+			accuracy_c3[i] = float(self.correct_c3_pred[i]) / self.total_c3_pred[i]
+		accuracy_c3[self.dataset.num_c3] = self.correct_c3_pred.sum() / self.total_c3_pred.sum()
+		self.barplot(np.arange(self.dataset.num_c3 + 1), accuracy_c3, (*self.dataset.labels_c3, 'overall'), "Accuracy on the third level")
+
+	
+	def test(self, mode = "print", filename = None):
+		self.eval()
+		self.initialize_memory(mode)
+
+		self.collect_test_performance(mode)
+
+		match mode:
+			case "plot":
+				self.plot_test_results()
+
+			case "print":
+				msg, msg_bot = self.test_results_to_text()
+				print(msg)
+				return msg_bot
+
+			case "write":
+				msg, msg_bot = self.test_results_to_text()
+				with open(filename+"_test_performance.txt", 'w') as f:
+					f.write(msg)
+				return msg_bot
+
+			case "train":
+				accuracy_c1 = self.correct_c1_pred.sum() / self.total_c1_pred.sum()
+				accuracy_c2 = self.correct_c2_pred.sum() / self.total_c2_pred.sum()
+				accuracy_c3 = self.correct_c3_pred.sum() / self.total_c3_pred.sum()
+
+				self.train()
+
+				return torch.tensor([accuracy_c1, accuracy_c2, accuracy_c3])
+				
+			case _:
+				raise AttributeError("Test mode not available")
+		
+	
+	def plot_training_loss(self, filename = None):
+		plt.figure(figsize=(12, 6))
+		plt.plot(np.linspace(1, self.epochs, self.loss_track.size(0)), self.loss_track[:, 0].numpy(), label = "First level")
+		plt.plot(np.linspace(1, self.epochs, self.loss_track.size(0)), self.loss_track[:, 1].numpy(), label = "Second level")
+		plt.plot(np.linspace(1, self.epochs, self.loss_track.size(0)), self.loss_track[:, 2].numpy(), label = "Third level")
+		plt.title("Training loss")
+		plt.xlabel("Epochs")
+		plt.ylabel("Error")
+		plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
+		plt.legend()
+		if filename is not None:
+			plt.savefig(filename, bbox_inches='tight')
+		else:
+			plt.show();
+
+	
+	def plot_test_accuracy(self, filename = None):
+		plt.figure(figsize=(12, 6))
+		plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.accuracy_track[:, 0].numpy(), label = "First level")
+		plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.accuracy_track[:, 1].numpy(), label = "Second level")
+		plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.accuracy_track[:, 2].numpy(), label = "Third level")
+		plt.title("Test accuracy")
+		plt.xlabel("Epochs")
+		plt.ylabel("Accuracy")
+		plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
+		plt.legend()
+		if filename is not None:
+			plt.savefig(filename, bbox_inches='tight')
+		else:
+			plt.show();
+
+	
+	def save_model(self, path):
+		torch.save(self.state_dict(), path+".pt")
+
+	
+	def load_model(self, path):
+		self.load_state_dict(torch.load(path+".pt"))
+		self.eval()
+
+	def num_param(self):
+		return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+	def write_configuration(self, filename, additional_info = "No"):
+		msg = ""
+		msg += "Epochs: " + str(self.epochs) + "\n\n"
+		msg += "LR: " 
+		for lr in self.learning_rate:
+			msg += str(lr) + " "
+		msg += "\n\n"
+		msg += "Switch point: " + str(self.switch_point) + "\n\n"
+		msg += "Number of params: " + str(self.num_param()) + "\n\n"
+		msg += "Additional info: " + additional_info
+		
+		with open(filename+"_configuration.txt", 'w') as f:
+			f.write(msg)
