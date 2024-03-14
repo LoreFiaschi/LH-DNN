@@ -76,11 +76,11 @@ coarser = Lambda(lambda y: torch.tensor([c3_to_c1(y), c3_to_c2(y), int(y)]))
 
 batch_size = 128
 
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
+trainset = torchvision.datasets.CIFAR10(root='../data', train=True, download=False, transform=transform, target_transform = coarser)
 
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
 
-testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
+testset = torchvision.datasets.CIFAR10(root='../data', train=False, download=False, transform=transform, target_transform = coarser)
 
 testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 

@@ -396,12 +396,14 @@ class CNN3(ABC, nn.Module):
 	def predict_and_learn(self, batch, labels):
 		self.optimizer.zero_grad()
 		predict = self(batch)
-		loss_f = self.criterion(predict[0], labels[:,0]) + sum(sum(abs(self.layerb17.weight)))
-		loss_i1 = self.criterion(predict[1], labels[:,1]) + sum(sum(abs(self.layerb27.weight)))
+		loss_f = self.criterion(predict[0], labels[:,0]) #+ 1e-5 * sum(sum(abs(self.layerb17.weight)))
+		loss_i1 = self.criterion(predict[1], labels[:,1]) #+ 1e-5 * sum(sum(abs(self.layerb27.weight)))
 		loss_i2 = self.criterion(predict[2], labels[:,2])
 		
-		loss_f.backward(retain_graph=True)
-		loss_i1.backward(retain_graph=True)
+		if loss_f >= 0.2:
+			loss_f.backward(retain_graph=True)
+		if loss_i1 >= 0.2:
+			loss_i1.backward(retain_graph=True)
 		loss_i2.backward()
 
 		self.optimizer.step()

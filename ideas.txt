@@ -6,3 +6,6 @@ usare norma 1 sull'ultimo layer per aumentare lo spazio di informazioni per le g
 
 
 Capire come è possibile che la versione per CIFAR10 abbia più parametri che per CIFAR100
+
+
+Capire come limitare overfitting dei livelli superiori
