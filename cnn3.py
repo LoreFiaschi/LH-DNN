@@ -340,7 +340,86 @@ class CIFAR100():
 			return 6
 			
 		return 7
-
+		
+	
+	def c1_to_c2(self, y):
+		match y:
+			case 0:
+				return (0,1)
+			case 1:
+				return (2,4,17)
+			case 2:
+				return (3,5,6)
+			case 3:
+				return (7, 13)
+			case 4:
+				return (8,11,12,15,16)
+			case 5:
+				return (9,10)
+			case 6:
+				return (14)
+			case _:
+				return (18, 19)
+				
+	def c2_to_c3(self, y):
+		match y:
+			case 0:
+				return [4, 30, 55, 72, 95]
+			case 1:
+				return [1, 32, 67, 73, 91]
+			case 2:
+				return [54, 62, 70, 82, 92]
+			case 3:
+				return [9, 10, 16, 28, 61]
+			case 4:
+				return [0, 51, 53, 57, 83]
+			case 5:
+				return [22, 39, 40, 86, 87]
+			case 6:
+				return [5, 20, 25, 84, 94]
+			case 7:
+				return [6, 7, 14, 18, 24]
+			case 8:
+				return [3, 42, 43, 88, 97]
+			case 9:
+				return [12, 17, 37, 68, 76]
+			case 10:
+				return [23, 33, 49, 60, 71]
+			case 11:
+				return [15, 19, 21, 31, 38]
+			case 12:
+				return [34, 63, 64, 66, 75]
+			case 13:
+				return [26, 45, 77, 79, 99]
+			case 14:
+				return [2, 11, 35, 46, 98]
+			case 15:
+				return [27, 29, 44, 78, 93]
+			case 16:
+				return [36, 50, 65, 74, 80]
+			case 17:
+				return [47, 52, 56, 59, 96]
+			case 18:
+				return [8, 13, 48, 58, 90]
+			case 19:
+				return [41, 69, 81, 85, 89]
+				
+				
+	def print_tree(self):
+		for i in np.range(self.num_c1):
+			idx_2 = self.c1_to_c2(i)
+			idx_3 = self.c2_to_c3(idx_2[0])
+			print(f'{self.labels_c1[i]:15s} -> {self.labels_c2[idx_2[0]]:15s} -> {self.labels_c3[idx_3[0]]:15s}')
+			
+			for label_3 in idx_3[1:]:
+				print(f'{:15s}    {:15s}    {label_3:15s}')
+				
+			for j, label_2 in enumerate(idx_2[1:]):
+				idx_3 = self.c2_to_c3(idx_2[j+1])
+				print(f'{:15s}    {label_2:15s} -> {self.labels_c3[idx_3[0]]:15s}')
+				
+				for label_3 in idx_3[1:]:
+				print(f'{:15s}    {:15s}    {label_3:15s}')
 
 
 class CNN3(ABC, nn.Module):
@@ -357,6 +436,9 @@ class CNN3(ABC, nn.Module):
 		self.custom_training = custom_training
 		self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
 		self.track_size = int( training_size / self.dataset.batch_size / every_print ) 
+		
+		self.c2_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c2))
+		self.c3_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c3))
 
 	
 	def forward(self, x):
@@ -379,10 +461,10 @@ class CNN3(ABC, nn.Module):
 			ort2[i,:] = self.compute_othogonal(zi, W1k)
 			ort3[i,:] = self.compute_othogonal(zi, W2k)
 			
-		#prj2 = z.clone().detach() - ort2.clone().detach()
-		#prj3 = z.clone().detach() - ort3.clone().detach()
+		prj2 = z.clone().detach() - ort2.clone().detach()
+		prj3 = z.clone().detach() - ort3.clone().detach()
 		
-		return ort2, ort3, #prj2, ort2, prj3, ort3
+		return ort2, ort3, prj2, prj3
 
 	def compute_othogonal(self, z, W, eps = 1e-8):
 		WWT = torch.matmul(W, W.T)
@@ -400,9 +482,9 @@ class CNN3(ABC, nn.Module):
 		loss_i1 = self.criterion(predict[1], labels[:,1]) #+ 1e-5 * sum(sum(abs(self.layerb27.weight)))
 		loss_i2 = self.criterion(predict[2], labels[:,2])
 		
-		if loss_f >= 0.2:
+		if loss_f >= 0.5:
 			loss_f.backward(retain_graph=True)
-		if loss_i1 >= 0.2:
+		if loss_i1 >= 0.5:
 			loss_i1.backward(retain_graph=True)
 		loss_i2.backward()
 
@@ -583,6 +665,13 @@ class CNN3(ABC, nn.Module):
 		str += '\n'
 		
 		str += '\n'
+		
+		str += f'Cross-accuracy c1 vs c2: {100 * float(self.correct_c1_vs_c2_pred.sum()) / self.total_c1_vs_c2_pred.sum():.2f} %'
+		str += '\n'
+		str += f'Cross-accuracy c2 vs c3: {100 * float(self.correct_c2_vs_c3_pred.sum()) / self.total_c2_vs_c3_pred.sum():.2f} %'
+		str += '\n'
+		str += f'Cross-accuracy c1 vs c3: {100 * float(self.correct_c1_vs_c3_pred.sum()) / self.total_c1_vs_c3_pred.sum():.2f} %'
+		str += '\n\n'
 
 		# cross classes accuracy (tree)
 		for i in np.arange(self.dataset.num_c1):
@@ -654,6 +743,21 @@ class CNN3(ABC, nn.Module):
 
 		str += '\n'
 		str_bot += '\n'
+		
+		 
+		str += f'Cross-accuracy c1 vs c2: {100 * float(self.correct_c1_vs_c2_pred.sum()) / self.total_c1_vs_c2_pred.sum():.2f} %'
+		str += '\n'
+		str += f'Cross-accuracy c2 vs c3: {100 * float(self.correct_c2_vs_c3_pred.sum()) / self.total_c2_vs_c3_pred.sum():.2f} %'
+		str += '\n'
+		str += f'Cross-accuracy c1 vs c3: {100 * float(self.correct_c1_vs_c3_pred.sum()) / self.total_c1_vs_c3_pred.sum():.2f} %'
+		str += '\n\n'
+ 
+		str_bot += f'Cross-accuracy c1 vs c2: {100 * float(self.correct_c1_vs_c2_pred.sum()) / self.total_c1_vs_c2_pred.sum():.2f} %'
+		str_bot += '\n'
+		str_bot += f'Cross-accuracy c2 vs c3: {100 * float(self.correct_c2_vs_c3_pred.sum()) / self.total_c2_vs_c3_pred.sum():.2f} %'
+		str_bot += '\n'
+		str_bot += f'Cross-accuracy c1 vs c3: {100 * float(self.correct_c1_vs_c3_pred.sum()) / self.total_c1_vs_c3_pred.sum():.2f} %'
+		str_bot += '\n'
 
 		# cross classes accuracy (tree)
 		for i in np.arange(self.dataset.num_c1):
@@ -675,13 +779,6 @@ class CNN3(ABC, nn.Module):
 			str += f'Cross-accuracy {self.dataset.labels_c1[i]:9s} vs c3: {accuracy_c1_c3:.2f} %'
 			str += '\n'
 			
-			
-		str_bot += f'Cross-accuracy c1 vs c2: {100 * float(self.correct_c1_vs_c2_pred.sum()) / self.total_c1_vs_c2_pred.sum():.2f} %'
-		str_bot += '\n'
-		str_bot += f'Cross-accuracy c2 vs c3: {100 * float(self.correct_c2_vs_c3_pred.sum()) / self.total_c2_vs_c3_pred.sum():.2f} %'
-		str_bot += '\n'
-		str_bot += f'Cross-accuracy c1 vs c3: {100 * float(self.correct_c1_vs_c3_pred.sum()) / self.total_c1_vs_c3_pred.sum():.2f} %'
-		str_bot += '\n'
 
 		return str, str_bot
 		
@@ -804,3 +901,58 @@ class CNN3(ABC, nn.Module):
 		
 		with open(filename+"_configuration.txt", 'w') as f:
 			f.write(msg)
+			
+
+	def c2_mask(self, c1_logits):
+		c1_labels = torch.argmax(c1_logits, dim = 1)
+		mask = torch.ones((c1_logits.size(0), self.dataset.num_c2))
+		for i, label in enumerate(c1_labels):
+			idx = self.dataset.c1_to_c2(label)
+			mask[i, idx] = 2
+		
+		return mask
+		
+	def c3_mask(self, c2_logits):
+		c2_labels = torch.argmax(c2_logits, dim = 1)
+		mask = torch.ones((c2_logits.size(0), self.dataset.num_c3))
+		for i, label in enumerate(c2_labels):
+			idx = self.dataset.c2_to_c3(label)
+			mask[i, idx] = 2
+		
+		return mask
+		
+	def c2_reinforce(self, c1_logits):
+		self.c2_reinforcer[0] = self.c2_reinforcer[1] = c1_logits[0]
+		self.c2_reinforcer[2] = self.c2_reinforcer[4] = self.c2_reinforcer[17] = c1_logits[1]
+		self.c2_reinforcer[3] = self.c2_reinforcer[5] = self.c2_reinforcer[6] = c1_logits[2]
+		self.c2_reinforcer[7] = self.c2_reinforcer[13] = c1_logits[3]
+		self.c2_reinforcer[8] = self.c2_reinforcer[11] = self.c2_reinforcer[12] = self.c2_reinforcer[15] = self.c2_reinforcer[16] = c1_logits[4]
+		self.c2_reinforcer[9] = self.c2_reinforcer[10] = c1_logits[5]
+		self.c2_reinforcer[14] = c1_logits[6] 
+		self.c2_reinforcer[18] = self.c2_reinforcer[19] = c1_logits[7]
+		
+		return self.c2_reinforcer
+		
+	def c3_reinforce(self, c2_logits):
+		self.c3_reinforcer[4] = self.c3_reinforcer[30] = self.c3_reinforcer[55] = self.c3_reinforcer[72] = self.c3_reinforcer[95] = c2_logits[0]
+		self.c3_reinforcer[1] = self.c3_reinforcer[32] = self.c3_reinforcer[67] = self.c3_reinforcer[73] = self.c3_reinforcer[91] = c2_logits[1]
+		self.c3_reinforcer[54] = self.c3_reinforcer[62] = self.c3_reinforcer[70] = self.c3_reinforcer[82] = self.c3_reinforcer[92] = c2_logits[2]
+		self.c3_reinforcer[9] = self.c3_reinforcer[10] = self.c3_reinforcer[16] = self.c3_reinforcer[28] = self.c3_reinforcer[61] = c2_logits[3]
+		self.c3_reinforcer[0] = self.c3_reinforcer[51] = self.c3_reinforcer[53] = self.c3_reinforcer[57] = self.c3_reinforcer[83] = c2_logits[4]
+		self.c3_reinforcer[22] = self.c3_reinforcer[39] = self.c3_reinforcer[40] = self.c3_reinforcer[86] = self.c3_reinforcer[87] = c2_logits[5]
+		self.c3_reinforcer[5] = self.c3_reinforcer[20] = self.c3_reinforcer[25] = self.c3_reinforcer[84] = self.c3_reinforcer[94] = c2_logits[6]
+		self.c3_reinforcer[6] = self.c3_reinforcer[7] = self.c3_reinforcer[14] = self.c3_reinforcer[18] = self.c3_reinforcer[24] = c2_logits[7]
+		self.c3_reinforcer[3] = self.c3_reinforcer[42] = self.c3_reinforcer[43] = self.c3_reinforcer[88] = self.c3_reinforcer[97] = c2_logits[8]
+		self.c3_reinforcer[12] = self.c3_reinforcer[17] = self.c3_reinforcer[37] = self.c3_reinforcer[68] = self.c3_reinforcer[76] = c2_logits[9]
+		self.c3_reinforcer[23] = self.c3_reinforcer[33] = self.c3_reinforcer[49] = self.c3_reinforcer[60] = self.c3_reinforcer[71] = c2_logits[10]
+		self.c3_reinforcer[15] = self.c3_reinforcer[19] = self.c3_reinforcer[21] = self.c3_reinforcer[31] = self.c3_reinforcer[38] = c2_logits[11]
+		self.c3_reinforcer[34] = self.c3_reinforcer[63] = self.c3_reinforcer[64] = self.c3_reinforcer[66] = self.c3_reinforcer[75] = c2_logits[12]
+		self.c3_reinforcer[26] = self.c3_reinforcer[45] = self.c3_reinforcer[77] = self.c3_reinforcer[79] = self.c3_reinforcer[99] = c2_logits[13]
+		self.c3_reinforcer[2] = self.c3_reinforcer[11] = self.c3_reinforcer[35] = self.c3_reinforcer[46] = self.c3_reinforcer[98] = c2_logits[14]
+		self.c3_reinforcer[27] = self.c3_reinforcer[29] = self.c3_reinforcer[44] = self.c3_reinforcer[78] = self.c3_reinforcer[93] = c2_logits[15]
+		self.c3_reinforcer[36] = self.c3_reinforcer[50] = self.c3_reinforcer[65] = self.c3_reinforcer[74] = self.c3_reinforcer[80] = c2_logits[16]
+		self.c3_reinforcer[47] = self.c3_reinforcer[52] = self.c3_reinforcer[56] = self.c3_reinforcer[59] = self.c3_reinforcer[96] = c2_logits[17]
+		self.c3_reinforcer[8] = self.c3_reinforcer[13] = self.c3_reinforcer[48] = self.c3_reinforcer[58] = self.c3_reinforcer[90] = c2_logits[18]
+		self.c3_reinforcer[41] = self.c3_reinforcer[69] = self.c3_reinforcer[81] = self.c3_reinforcer[85] = self.c3_reinforcer[89] = c2_logits[19]
+		
+		return self.c3_reinforcer
