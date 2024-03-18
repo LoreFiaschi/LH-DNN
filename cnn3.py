@@ -404,7 +404,7 @@ class CIFAR100():
 			case 19:
 				return [41, 69, 81, 85, 89]
 				
-				
+"""				
 	def print_tree(self):
 		for i in np.range(self.num_c1):
 			idx_2 = self.c1_to_c2(i)
@@ -420,10 +420,10 @@ class CIFAR100():
 				
 				for label_3 in idx_3[1:]:
 				print(f'{:15s}    {:15s}    {label_3:15s}')
-
+"""
 
 class CNN3(ABC, nn.Module):
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, training_size = 50000):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, training_size = 50000, threshold = 0.1):
 		
 		super().__init__()
 		self.dataset = dataset
@@ -436,6 +436,7 @@ class CNN3(ABC, nn.Module):
 		self.custom_training = custom_training
 		self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
 		self.track_size = int( training_size / self.dataset.batch_size / every_print ) 
+		self.threshold = threshold
 		
 		self.c2_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c2))
 		self.c3_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c3))
@@ -482,9 +483,9 @@ class CNN3(ABC, nn.Module):
 		loss_i1 = self.criterion(predict[1], labels[:,1]) #+ 1e-5 * sum(sum(abs(self.layerb27.weight)))
 		loss_i2 = self.criterion(predict[2], labels[:,2])
 		
-		if loss_f >= 0.5:
+		if loss_f >= self.threshold:
 			loss_f.backward(retain_graph=True)
-		if loss_i1 >= 0.5:
+		if loss_i1 >= self.threshold:
 			loss_i1.backward(retain_graph=True)
 		loss_i2.backward()
 
@@ -897,6 +898,7 @@ class CNN3(ABC, nn.Module):
 		msg += "\n\n"
 		msg += "Switch point: " + str(self.switch_point) + "\n\n"
 		msg += "Number of params: " + str(self.num_param()) + "\n\n"
+		msg += "Loss threshold: " + str(self.threshold) + "\n\n"
 		msg += "Additional info: " + additional_info
 		
 		with open(filename+"_configuration.txt", 'w') as f:
@@ -922,37 +924,39 @@ class CNN3(ABC, nn.Module):
 		return mask
 		
 	def c2_reinforce(self, c1_logits):
-		self.c2_reinforcer[0] = self.c2_reinforcer[1] = c1_logits[0]
-		self.c2_reinforcer[2] = self.c2_reinforcer[4] = self.c2_reinforcer[17] = c1_logits[1]
-		self.c2_reinforcer[3] = self.c2_reinforcer[5] = self.c2_reinforcer[6] = c1_logits[2]
-		self.c2_reinforcer[7] = self.c2_reinforcer[13] = c1_logits[3]
-		self.c2_reinforcer[8] = self.c2_reinforcer[11] = self.c2_reinforcer[12] = self.c2_reinforcer[15] = self.c2_reinforcer[16] = c1_logits[4]
-		self.c2_reinforcer[9] = self.c2_reinforcer[10] = c1_logits[5]
-		self.c2_reinforcer[14] = c1_logits[6] 
-		self.c2_reinforcer[18] = self.c2_reinforcer[19] = c1_logits[7]
+		num_rows = c1_logits.size(0)
+		self.c2_reinforcer[:num_rows,0] = self.c2_reinforcer[:num_rows,1] = c1_logits[:,0]
+		self.c2_reinforcer[:num_rows,2] = self.c2_reinforcer[:num_rows,4] = self.c2_reinforcer[:num_rows,17] = c1_logits[:,1]
+		self.c2_reinforcer[:num_rows,3] = self.c2_reinforcer[:num_rows,5] = self.c2_reinforcer[:num_rows,6] = c1_logits[:,2]
+		self.c2_reinforcer[:num_rows,7] = self.c2_reinforcer[:num_rows,13] = c1_logits[:,3]
+		self.c2_reinforcer[:num_rows,8] = self.c2_reinforcer[:num_rows,11] = self.c2_reinforcer[:num_rows,12] = self.c2_reinforcer[:num_rows,15] = self.c2_reinforcer[:num_rows,16] = c1_logits[:,4]
+		self.c2_reinforcer[:num_rows,9] = self.c2_reinforcer[:num_rows,10] = c1_logits[:,5]
+		self.c2_reinforcer[:num_rows,14] = c1_logits[:,6] 
+		self.c2_reinforcer[:num_rows,18] = self.c2_reinforcer[:num_rows,19] = c1_logits[:,7]
 		
-		return self.c2_reinforcer
+		return self.c2_reinforcer[:num_rows,:]
 		
 	def c3_reinforce(self, c2_logits):
-		self.c3_reinforcer[4] = self.c3_reinforcer[30] = self.c3_reinforcer[55] = self.c3_reinforcer[72] = self.c3_reinforcer[95] = c2_logits[0]
-		self.c3_reinforcer[1] = self.c3_reinforcer[32] = self.c3_reinforcer[67] = self.c3_reinforcer[73] = self.c3_reinforcer[91] = c2_logits[1]
-		self.c3_reinforcer[54] = self.c3_reinforcer[62] = self.c3_reinforcer[70] = self.c3_reinforcer[82] = self.c3_reinforcer[92] = c2_logits[2]
-		self.c3_reinforcer[9] = self.c3_reinforcer[10] = self.c3_reinforcer[16] = self.c3_reinforcer[28] = self.c3_reinforcer[61] = c2_logits[3]
-		self.c3_reinforcer[0] = self.c3_reinforcer[51] = self.c3_reinforcer[53] = self.c3_reinforcer[57] = self.c3_reinforcer[83] = c2_logits[4]
-		self.c3_reinforcer[22] = self.c3_reinforcer[39] = self.c3_reinforcer[40] = self.c3_reinforcer[86] = self.c3_reinforcer[87] = c2_logits[5]
-		self.c3_reinforcer[5] = self.c3_reinforcer[20] = self.c3_reinforcer[25] = self.c3_reinforcer[84] = self.c3_reinforcer[94] = c2_logits[6]
-		self.c3_reinforcer[6] = self.c3_reinforcer[7] = self.c3_reinforcer[14] = self.c3_reinforcer[18] = self.c3_reinforcer[24] = c2_logits[7]
-		self.c3_reinforcer[3] = self.c3_reinforcer[42] = self.c3_reinforcer[43] = self.c3_reinforcer[88] = self.c3_reinforcer[97] = c2_logits[8]
-		self.c3_reinforcer[12] = self.c3_reinforcer[17] = self.c3_reinforcer[37] = self.c3_reinforcer[68] = self.c3_reinforcer[76] = c2_logits[9]
-		self.c3_reinforcer[23] = self.c3_reinforcer[33] = self.c3_reinforcer[49] = self.c3_reinforcer[60] = self.c3_reinforcer[71] = c2_logits[10]
-		self.c3_reinforcer[15] = self.c3_reinforcer[19] = self.c3_reinforcer[21] = self.c3_reinforcer[31] = self.c3_reinforcer[38] = c2_logits[11]
-		self.c3_reinforcer[34] = self.c3_reinforcer[63] = self.c3_reinforcer[64] = self.c3_reinforcer[66] = self.c3_reinforcer[75] = c2_logits[12]
-		self.c3_reinforcer[26] = self.c3_reinforcer[45] = self.c3_reinforcer[77] = self.c3_reinforcer[79] = self.c3_reinforcer[99] = c2_logits[13]
-		self.c3_reinforcer[2] = self.c3_reinforcer[11] = self.c3_reinforcer[35] = self.c3_reinforcer[46] = self.c3_reinforcer[98] = c2_logits[14]
-		self.c3_reinforcer[27] = self.c3_reinforcer[29] = self.c3_reinforcer[44] = self.c3_reinforcer[78] = self.c3_reinforcer[93] = c2_logits[15]
-		self.c3_reinforcer[36] = self.c3_reinforcer[50] = self.c3_reinforcer[65] = self.c3_reinforcer[74] = self.c3_reinforcer[80] = c2_logits[16]
-		self.c3_reinforcer[47] = self.c3_reinforcer[52] = self.c3_reinforcer[56] = self.c3_reinforcer[59] = self.c3_reinforcer[96] = c2_logits[17]
-		self.c3_reinforcer[8] = self.c3_reinforcer[13] = self.c3_reinforcer[48] = self.c3_reinforcer[58] = self.c3_reinforcer[90] = c2_logits[18]
-		self.c3_reinforcer[41] = self.c3_reinforcer[69] = self.c3_reinforcer[81] = self.c3_reinforcer[85] = self.c3_reinforcer[89] = c2_logits[19]
+		num_rows = c2_logits.size(0)
+		self.c3_reinforcer[:num_rows,4] = self.c3_reinforcer[:num_rows,30] = self.c3_reinforcer[:num_rows,55] = self.c3_reinforcer[:num_rows,72] = self.c3_reinforcer[:num_rows,95] = c2_logits[:,0]
+		self.c3_reinforcer[:num_rows,1] = self.c3_reinforcer[:num_rows,32] = self.c3_reinforcer[:num_rows,67] = self.c3_reinforcer[:num_rows,73] = self.c3_reinforcer[:num_rows,91] = c2_logits[:,1]
+		self.c3_reinforcer[:num_rows,54] = self.c3_reinforcer[:num_rows,62] = self.c3_reinforcer[:num_rows,70] = self.c3_reinforcer[:num_rows,82] = self.c3_reinforcer[:num_rows,92] = c2_logits[:,2]
+		self.c3_reinforcer[:num_rows,9] = self.c3_reinforcer[:num_rows,10] = self.c3_reinforcer[:num_rows,16] = self.c3_reinforcer[:num_rows,28] = self.c3_reinforcer[:num_rows,61] = c2_logits[:,3]
+		self.c3_reinforcer[:num_rows,0] = self.c3_reinforcer[:num_rows,51] = self.c3_reinforcer[:num_rows,53] = self.c3_reinforcer[:num_rows,57] = self.c3_reinforcer[:num_rows,83] = c2_logits[:,4]
+		self.c3_reinforcer[:num_rows,22] = self.c3_reinforcer[:num_rows,39] = self.c3_reinforcer[:num_rows,40] = self.c3_reinforcer[:num_rows,86] = self.c3_reinforcer[:num_rows,87] = c2_logits[:,5]
+		self.c3_reinforcer[:num_rows,5] = self.c3_reinforcer[:num_rows,20] = self.c3_reinforcer[:num_rows,25] = self.c3_reinforcer[:num_rows,84] = self.c3_reinforcer[:num_rows,94] = c2_logits[:,6]
+		self.c3_reinforcer[:num_rows,6] = self.c3_reinforcer[:num_rows,7] = self.c3_reinforcer[:num_rows,14] = self.c3_reinforcer[:num_rows,18] = self.c3_reinforcer[:num_rows,24] = c2_logits[:,7]
+		self.c3_reinforcer[:num_rows,3] = self.c3_reinforcer[:num_rows,42] = self.c3_reinforcer[:num_rows,43] = self.c3_reinforcer[:num_rows,88] = self.c3_reinforcer[:num_rows,97] = c2_logits[:,8]
+		self.c3_reinforcer[:num_rows,12] = self.c3_reinforcer[:num_rows,17] = self.c3_reinforcer[:num_rows,37] = self.c3_reinforcer[:num_rows,68] = self.c3_reinforcer[:num_rows,76] = c2_logits[:,9]
+		self.c3_reinforcer[:num_rows,23] = self.c3_reinforcer[:num_rows,33] = self.c3_reinforcer[:num_rows,49] = self.c3_reinforcer[:num_rows,60] = self.c3_reinforcer[:num_rows,71] = c2_logits[:,10]
+		self.c3_reinforcer[:num_rows,15] = self.c3_reinforcer[:num_rows,19] = self.c3_reinforcer[:num_rows,21] = self.c3_reinforcer[:num_rows,31] = self.c3_reinforcer[:num_rows,38] = c2_logits[:,11]
+		self.c3_reinforcer[:num_rows,34] = self.c3_reinforcer[:num_rows,63] = self.c3_reinforcer[:num_rows,64] = self.c3_reinforcer[:num_rows,66] = self.c3_reinforcer[:num_rows,75] = c2_logits[:,12]
+		self.c3_reinforcer[:num_rows,26] = self.c3_reinforcer[:num_rows,45] = self.c3_reinforcer[:num_rows,77] = self.c3_reinforcer[:num_rows,79] = self.c3_reinforcer[:num_rows,99] = c2_logits[:,13]
+		self.c3_reinforcer[:num_rows,2] = self.c3_reinforcer[:num_rows,11] = self.c3_reinforcer[:num_rows,35] = self.c3_reinforcer[:num_rows,46] = self.c3_reinforcer[:num_rows,98] = c2_logits[:,14]
+		self.c3_reinforcer[:num_rows,27] = self.c3_reinforcer[:num_rows,29] = self.c3_reinforcer[:num_rows,44] = self.c3_reinforcer[:num_rows,78] = self.c3_reinforcer[:num_rows,93] = c2_logits[:,15]
+		self.c3_reinforcer[:num_rows,36] = self.c3_reinforcer[:num_rows,50] = self.c3_reinforcer[:num_rows,65] = self.c3_reinforcer[:num_rows,74] = self.c3_reinforcer[:num_rows,80] = c2_logits[:,16]
+		self.c3_reinforcer[:num_rows,47] = self.c3_reinforcer[:num_rows,52] = self.c3_reinforcer[:num_rows,56] = self.c3_reinforcer[:num_rows,59] = self.c3_reinforcer[:num_rows,96] = c2_logits[:,17]
+		self.c3_reinforcer[:num_rows,8] = self.c3_reinforcer[:num_rows,13] = self.c3_reinforcer[:num_rows,48] = self.c3_reinforcer[:num_rows,58] = self.c3_reinforcer[:num_rows,90] = c2_logits[:,18]
+		self.c3_reinforcer[:num_rows,41] = self.c3_reinforcer[:num_rows,69] = self.c3_reinforcer[:num_rows,81] = self.c3_reinforcer[:num_rows,85] = self.c3_reinforcer[:num_rows,89] = c2_logits[:,19]
 		
-		return self.c3_reinforcer
+		return self.c3_reinforcer[:num_rows,:]
