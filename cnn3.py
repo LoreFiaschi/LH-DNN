@@ -345,21 +345,21 @@ class CIFAR100():
 	def c1_to_c2(self, y):
 		match y:
 			case 0:
-				return (0,1)
+				return [0,1]
 			case 1:
-				return (2,4,17)
+				return [2,4,17]
 			case 2:
-				return (3,5,6)
+				return [3,5,6]
 			case 3:
-				return (7, 13)
+				return [7, 13]
 			case 4:
-				return (8,11,12,15,16)
+				return [8,11,12,15,16]
 			case 5:
-				return (9,10)
+				return [9,10]
 			case 6:
-				return (14)
+				return [14]
 			case _:
-				return (18, 19)
+				return [18, 19]
 				
 	def c2_to_c3(self, y):
 		match y:
@@ -404,23 +404,23 @@ class CIFAR100():
 			case 19:
 				return [41, 69, 81, 85, 89]
 				
-"""				
+							
 	def print_tree(self):
-		for i in np.range(self.num_c1):
+		for i in np.arange(self.num_c1):
 			idx_2 = self.c1_to_c2(i)
 			idx_3 = self.c2_to_c3(idx_2[0])
-			print(f'{self.labels_c1[i]:15s} -> {self.labels_c2[idx_2[0]]:15s} -> {self.labels_c3[idx_3[0]]:15s}')
+			print(f'{self.labels_c1[i]:15s} -> {self.labels_c2[idx_2[0]]:25s} -> {self.labels_c3[idx_3[0]]:15s}')
 			
 			for label_3 in idx_3[1:]:
-				print(f'{:15s}    {:15s}    {label_3:15s}')
+				print(f'{"":<15}    {"":<25}    {self.labels_c3[label_3]:15s}')
 				
 			for j, label_2 in enumerate(idx_2[1:]):
 				idx_3 = self.c2_to_c3(idx_2[j+1])
-				print(f'{:15s}    {label_2:15s} -> {self.labels_c3[idx_3[0]]:15s}')
+				print(f'{"":<15}    {self.labels_c2[label_2]:25s} -> {self.labels_c3[idx_3[0]]:15s}')
 				
 				for label_3 in idx_3[1:]:
-				print(f'{:15s}    {:15s}    {label_3:15s}')
-"""
+					print(f'{"":<15}    {"":<25}    {self.labels_c3[label_3]:15s}')
+
 
 class CNN3(ABC, nn.Module):
 	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, training_size = 50000, threshold = 0.1):

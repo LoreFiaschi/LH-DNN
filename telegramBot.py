@@ -22,3 +22,8 @@ class Terminator(TelegramBot):
     
     def sendMessage(self, message, chat = '109373025'):
         super().sendMessage(message + "\n\nHasta la vista!", chat) 
+
+
+    def sendPhoto(self, filename, chat = '109373025'):
+        
+        super().sendMessage
