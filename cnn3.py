@@ -491,7 +491,7 @@ class CNN3(ABC, nn.Module):
 
 		self.optimizer.step()
 
-		return torch.tensor([loss_f, loss_i1, loss_i2])
+		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach()
 
 
 	def train_model(self, verbose = False):
