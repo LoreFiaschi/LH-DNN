@@ -508,6 +508,7 @@ class CNN3(ABC, nn.Module):
 
 				if verbose:
 					running_loss += (loss - running_loss) / iter
+
 					if iter & self.every_print == 0:
 						print(f'[{epoch + 1}] loss_f : {running_loss[0] :.3f}')
 						print(f'[{epoch + 1}] loss_i1: {running_loss_[1] :.3f}')
@@ -515,6 +516,8 @@ class CNN3(ABC, nn.Module):
 						for i in np.arange(self.dataset.class_levels):
 							running_loss[i] = 0.0
 						iter = 1
+						
+					iter +=1
 
 
 	def training_loop_body(self):
@@ -526,6 +529,7 @@ class CNN3(ABC, nn.Module):
 			loss = self.predict_and_learn(batch, labels)
 
 			running_loss += (loss - running_loss) / iter
+			
 			if iter & self.every_print == 0:
 				self.loss_track[self.num_push, :] = running_loss
 				self.accuracy_track[self.num_push, :] = self.test(mode = "train")
@@ -533,6 +537,8 @@ class CNN3(ABC, nn.Module):
 				for i in np.arange(self.dataset.class_levels):
 						running_loss[i] = 0.0
 				iter = 1
+
+			iter +=1
 
 	
 	def train_track(self, filename = ""):
