@@ -466,8 +466,8 @@ class CNN3(ABC, nn.Module):
 		W2k_ = W2.matmul(Rk)
 		W2k = torch.cat((W1k, W2k_), dim = 1)
 
-		ort2 = self.compute_orthogonal(zz, W1k, self.I_o1)
-		ort3 = self.compute_orthogonal(zz, W2k, self.I_o2)
+		ort2 = self.compute_orthogonal(z, W1k, self.I_o1)
+		ort3 = self.compute_orthogonal(z, W2k, self.I_o2)
 
 		prj2 = zz - ort2.clone().detach()
 		prj3 = zz - ort3.clone().detach()
