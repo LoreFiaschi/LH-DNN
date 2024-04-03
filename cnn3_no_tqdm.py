@@ -13,14 +13,14 @@ from torchvision.transforms import ToTensor, Lambda
 from abc import ABC
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm 
+#from tqdm import tqdm 
 
 
 num_cores = 8
 torch.set_num_interop_threads(num_cores) # Inter-op parallelism
 torch.set_num_threads(num_cores) # Intra-op parallelism
-#device = "cuda:0"
-device = "cpu"
+device = "cuda:0"
+#device = "cpu"
 
 class CIFAR10():
 
@@ -95,7 +95,7 @@ class CIFAR10():
 	def c3_reinforce(self, c2_logits, c3_reinforcer):
 		pass
 		
-	
+
 	def str(self):
 		return "CIFAR10"
 
@@ -116,11 +116,11 @@ class CIFAR100():
 
 		self.batch_size = 128
 
-		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform, target_transform = coarser)
+		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
 
 		self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
 
-		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform, target_transform = coarser)
+		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
 
 		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 		
@@ -476,8 +476,7 @@ class CIFAR100():
 
 	def str(self):
 		return "CIFAR100"
-		
-		
+
 
 class CNN3(ABC, nn.Module):
 	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_points = None, custom_training = False, training_size = 50000, threshold = 0.0):
@@ -647,18 +646,18 @@ class CNN3(ABC, nn.Module):
 			self.custom_training_f()
 			
 		elif self.switch_points is None:
-			for epoch in tqdm(self.epochs, desc="Training: "):
+			for epoch in self.epochs:
 				training_f()
 				
 		else:
 			prev_switch_point = 0
 			for idx, switch_point in enumerate(self.switch_points):
-				for epoch in tqdm(np.arange(prev_switch_point, switch_point), desc="Training: "):
+				for epoch in np.arange(prev_switch_point, switch_point):
 					training_f()
 				self.optimizer.param_groups[0]['lr'] = self.learning_rate[idx]
 				prev_switch_point  = switch_point
 				
-			for epoch in tqdm(np.arange(prev_switch_point, self.epochs), desc="Training: "):
+			for epoch in np.arange(prev_switch_point, self.epochs):
 				training_f()
 
 		if track:

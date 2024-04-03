@@ -86,6 +86,18 @@ class CIFAR10():
 		if y < 3:
 			return 0
 		return 1
+		
+	
+	def c2_reinforce(self, c1_logits, c2_reinforcer):
+		pass
+		
+	
+	def c3_reinforce(self, c2_logits, c3_reinforcer):
+		pass
+
+
+	def str(self):
+		return "CIFAR10"
 
 
 
@@ -105,11 +117,11 @@ class CIFAR100():
 
 		self.batch_size = 128
 
-		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform, target_transform = coarser)
+		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
 
 		self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
 
-		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform, target_transform = coarser)
+		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
 
 		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 		
@@ -414,18 +426,61 @@ class CIFAR100():
 			print(f'{self.labels_c1[i]:15s} -> {self.labels_c2[idx_2[0]]:25s} -> {self.labels_c3[idx_3[0]]:15s}')
 			
 			for label_3 in idx_3[1:]:
-				print(f'{"":<15}    {"":<25}    {self.labels_c3[label_3]:15s}')
+				print(f'{"":<15}	{"":<25}	{self.labels_c3[label_3]:15s}')
 				
 			for j, label_2 in enumerate(idx_2[1:]):
 				idx_3 = self.c2_to_c3(idx_2[j+1])
-				print(f'{"":<15}    {self.labels_c2[label_2]:25s} -> {self.labels_c3[idx_3[0]]:15s}')
+				print(f'{"":<15}	{self.labels_c2[label_2]:25s} -> {self.labels_c3[idx_3[0]]:15s}')
 				
 				for label_3 in idx_3[1:]:
-					print(f'{"":<15}    {"":<25}    {self.labels_c3[label_3]:15s}')
+					print(f'{"":<15}	{"":<25}	{self.labels_c3[label_3]:15s}')
+					
+					
+	def c2_reinforce(self, c1_logits, c2_reinforcer):
+		num_rows = c1_logits.size(0)
+		c2_reinforcer[:num_rows,0] = c2_reinforcer[:num_rows,1] = c1_logits[:,0]
+		c2_reinforcer[:num_rows,2] = c2_reinforcer[:num_rows,4] = c2_reinforcer[:num_rows,17] = c1_logits[:,1]
+		c2_reinforcer[:num_rows,3] = c2_reinforcer[:num_rows,5] = c2_reinforcer[:num_rows,6] = c1_logits[:,2]
+		c2_reinforcer[:num_rows,7] = c2_reinforcer[:num_rows,13] = c1_logits[:,3]
+		c2_reinforcer[:num_rows,8] = c2_reinforcer[:num_rows,11] = c2_reinforcer[:num_rows,12] = c2_reinforcer[:num_rows,15] = c2_reinforcer[:num_rows,16] = c1_logits[:,4]
+		c2_reinforcer[:num_rows,9] = c2_reinforcer[:num_rows,10] = c1_logits[:,5]
+		c2_reinforcer[:num_rows,14] = c1_logits[:,6] 
+		c2_reinforcer[:num_rows,18] = c2_reinforcer[:num_rows,19] = c1_logits[:,7]
+		
+		return c2_reinforcer[:num_rows,:]
+		
+	def c3_reinforce(self, c2_logits, c3_reinforcer):
+		num_rows = c2_logits.size(0)
+		c3_reinforcer[:num_rows,4] = c3_reinforcer[:num_rows,30] = c3_reinforcer[:num_rows,55] = c3_reinforcer[:num_rows,72] = c3_reinforcer[:num_rows,95] = c2_logits[:,0]
+		c3_reinforcer[:num_rows,1] = c3_reinforcer[:num_rows,32] = c3_reinforcer[:num_rows,67] = c3_reinforcer[:num_rows,73] = c3_reinforcer[:num_rows,91] = c2_logits[:,1]
+		c3_reinforcer[:num_rows,54] = c3_reinforcer[:num_rows,62] = c3_reinforcer[:num_rows,70] = c3_reinforcer[:num_rows,82] = c3_reinforcer[:num_rows,92] = c2_logits[:,2]
+		c3_reinforcer[:num_rows,9] = c3_reinforcer[:num_rows,10] = c3_reinforcer[:num_rows,16] = c3_reinforcer[:num_rows,28] = c3_reinforcer[:num_rows,61] = c2_logits[:,3]
+		c3_reinforcer[:num_rows,0] = c3_reinforcer[:num_rows,51] = c3_reinforcer[:num_rows,53] = c3_reinforcer[:num_rows,57] = c3_reinforcer[:num_rows,83] = c2_logits[:,4]
+		c3_reinforcer[:num_rows,22] = c3_reinforcer[:num_rows,39] = c3_reinforcer[:num_rows,40] = c3_reinforcer[:num_rows,86] = c3_reinforcer[:num_rows,87] = c2_logits[:,5]
+		c3_reinforcer[:num_rows,5] = c3_reinforcer[:num_rows,20] = c3_reinforcer[:num_rows,25] = c3_reinforcer[:num_rows,84] = c3_reinforcer[:num_rows,94] = c2_logits[:,6]
+		c3_reinforcer[:num_rows,6] = c3_reinforcer[:num_rows,7] = c3_reinforcer[:num_rows,14] = c3_reinforcer[:num_rows,18] = c3_reinforcer[:num_rows,24] = c2_logits[:,7]
+		c3_reinforcer[:num_rows,3] = c3_reinforcer[:num_rows,42] = c3_reinforcer[:num_rows,43] = c3_reinforcer[:num_rows,88] = c3_reinforcer[:num_rows,97] = c2_logits[:,8]
+		c3_reinforcer[:num_rows,12] = c3_reinforcer[:num_rows,17] = c3_reinforcer[:num_rows,37] = c3_reinforcer[:num_rows,68] = c3_reinforcer[:num_rows,76] = c2_logits[:,9]
+		c3_reinforcer[:num_rows,23] = c3_reinforcer[:num_rows,33] = c3_reinforcer[:num_rows,49] = c3_reinforcer[:num_rows,60] = c3_reinforcer[:num_rows,71] = c2_logits[:,10]
+		c3_reinforcer[:num_rows,15] = c3_reinforcer[:num_rows,19] = c3_reinforcer[:num_rows,21] = c3_reinforcer[:num_rows,31] = c3_reinforcer[:num_rows,38] = c2_logits[:,11]
+		c3_reinforcer[:num_rows,34] = c3_reinforcer[:num_rows,63] = c3_reinforcer[:num_rows,64] = c3_reinforcer[:num_rows,66] = c3_reinforcer[:num_rows,75] = c2_logits[:,12]
+		c3_reinforcer[:num_rows,26] = c3_reinforcer[:num_rows,45] = c3_reinforcer[:num_rows,77] = c3_reinforcer[:num_rows,79] = c3_reinforcer[:num_rows,99] = c2_logits[:,13]
+		c3_reinforcer[:num_rows,2] = c3_reinforcer[:num_rows,11] = c3_reinforcer[:num_rows,35] = c3_reinforcer[:num_rows,46] = c3_reinforcer[:num_rows,98] = c2_logits[:,14]
+		c3_reinforcer[:num_rows,27] = c3_reinforcer[:num_rows,29] = c3_reinforcer[:num_rows,44] = c3_reinforcer[:num_rows,78] = c3_reinforcer[:num_rows,93] = c2_logits[:,15]
+		c3_reinforcer[:num_rows,36] = c3_reinforcer[:num_rows,50] = c3_reinforcer[:num_rows,65] = c3_reinforcer[:num_rows,74] = c3_reinforcer[:num_rows,80] = c2_logits[:,16]
+		c3_reinforcer[:num_rows,47] = c3_reinforcer[:num_rows,52] = c3_reinforcer[:num_rows,56] = c3_reinforcer[:num_rows,59] = c3_reinforcer[:num_rows,96] = c2_logits[:,17]
+		c3_reinforcer[:num_rows,8] = c3_reinforcer[:num_rows,13] = c3_reinforcer[:num_rows,48] = c3_reinforcer[:num_rows,58] = c3_reinforcer[:num_rows,90] = c2_logits[:,18]
+		c3_reinforcer[:num_rows,41] = c3_reinforcer[:num_rows,69] = c3_reinforcer[:num_rows,81] = c3_reinforcer[:num_rows,85] = c3_reinforcer[:num_rows,89] = c2_logits[:,19]
+		
+		return c3_reinforcer[:num_rows,:]
+
+
+	def str(self):
+		return "CIFAR100"
 
 
 class CNN3(ABC, nn.Module):
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, training_size = 50000, threshold = 0.1):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_points = None, custom_training = False, training_size = 50000, threshold = 0.0):
 		
 		super().__init__()
 		self.dataset = dataset
@@ -434,16 +489,20 @@ class CNN3(ABC, nn.Module):
 		self.nesterov = nesterov
 		self.activation = F.relu
 		self.epochs = epochs
-		self.switch_point = switch_point if (switch_point is None or switch_point < epochs) else epochs
+		self.switch_points = switch_points
 		self.custom_training = custom_training
 		self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
 		self.track_size = int( training_size / self.dataset.batch_size / every_print ) 
 		self.threshold = threshold
+		self.predict_and_learn = self.predict_and_learn_naive if threshold == 0.0 else self.predict_and_learn_thresholded
 		
 		self.c2_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c2), device = device)
 		self.c3_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c3), device = device)
 
 		self.v = torch.tensor(0., device = device)
+		
+		if switch_points is not None and len(switch_points) != len(learning_rate)-1:
+			raise ValueError("switch_points and learning_rate must have the same number of elements")
 
 	
 	def forward(self, x):
@@ -455,8 +514,8 @@ class CNN3(ABC, nn.Module):
 
 		W1 = self.layerb17.weight.clone().detach()
 		W2 = self.layerb27.weight.clone().detach()
-		ort2 = torch.empty_like(z)
-		ort3 = torch.empty_like(z)
+		self.ort2 = torch.empty_like(z)
+		self.ort3 = torch.empty_like(z)
 		
 		zz = z.clone().detach()
 
@@ -466,13 +525,13 @@ class CNN3(ABC, nn.Module):
 		W2k_ = W2.matmul(Rk)
 		W2k = torch.cat((W1k, W2k_), dim = 1)
 
-		ort2 = self.compute_orthogonal(z, W1k, self.I_o1)
-		ort3 = self.compute_orthogonal(z, W2k, self.I_o2)
+		self.ort2 = self.compute_orthogonal(z, W1k, self.I_o1)
+		self.ort3 = self.compute_orthogonal(z, W2k, self.I_o2)
 
-		prj2 = zz - ort2.clone().detach()
-		prj3 = zz - ort3.clone().detach()
+		prj2 = zz - self.ort2.clone().detach()
+		prj3 = zz - self.ort3.clone().detach()
 
-		return ort2, ort3, prj2, prj3
+		return self.ort2, self.ort3, prj2, prj3
 
 	def compute_orthogonal(self, z, W, I_o, eps = 1e-8):
 		WWT = torch.matmul(W, W.mT)
@@ -483,106 +542,129 @@ class CNN3(ABC, nn.Module):
 		return torch.matmul(z.unsqueeze(1), P).squeeze()
 		
 	
-	def predict_and_learn(self, batch, labels):
+	def predict_and_learn_naive(self, batch, labels):
 		self.optimizer.zero_grad()
 		predict = self(batch)
 		loss_f = self.criterion(predict[0], labels[:,0]) #+ 1e-5 * sum(sum(abs(self.layerb17.weight)))
 		loss_i1 = self.criterion(predict[1], labels[:,1]) #+ 1e-5 * sum(sum(abs(self.layerb27.weight)))
 		loss_i2 = self.criterion(predict[2], labels[:,2])
 		
-		if loss_f >= self.threshold:
-			loss_f.backward(retain_graph=True)
-		if loss_i1 >= self.threshold:
-			loss_i1.backward(retain_graph=True)
+		loss_f.backward(retain_graph=True)
+		loss_i1.backward(retain_graph=True)
 		loss_i2.backward()
 
 		self.optimizer.step()
 
-		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach()
-
-
-	def train_model(self, verbose = False):
-		self.I = torch.eye(self.layerb_mid.out_features, device = device)
-		self.I_o1 = torch.eye(self.layerb17.out_features, device = device)
-		self.I_o2 = torch.eye(self.layerb17.out_features + self.layerb27.out_features, device = device)
-		self.train()
+		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2, self.v).mean(), torch.heaviside(self.ort3, self.v).mean()]).clone().detach()
 		
-		for epoch in tqdm(np.arange(self.epochs), desc="Training: "):
-			#self.update_training_params(epoch)
 
-			if verbose:
-				running_loss = torch.zeros(self.dataset.class_levels)
-			iter = 1
-			for batch, labels in self.dataset.trainloader:
-				batch = batch.to(device)
-				labels = labels.to(device)
-				loss = self.predict_and_learn(batch, labels)
+	def vect_to_scalar_loss(self, loss_vect):
+		return torch.mean(loss_vect[torch.where(loss_vect >= self.threshold)])
 
-				if verbose:
-					running_loss += (loss - running_loss) / iter
+	
+	def predict_and_learn_thresholded(self, batch, labels):
+		self.optimizer.zero_grad()
+		predict = self(batch)
+		loss_f_vect = self.criterion(predict[0], labels[:,0]) 
+		loss_i1_vect = self.criterion(predict[1], labels[:,1])
+		loss_i2_vect = self.criterion(predict[2], labels[:,2])
 
-					if iter & self.every_print == 0:
-						print(f'[{epoch + 1}] loss_f : {running_loss[0] :.3f}')
-						print(f'[{epoch + 1}] loss_i1: {running_loss_[1] :.3f}')
-						print(f'[{epoch + 1}] loss_i2: {running_loss_[2] :.3f}')
-						for i in np.arange(self.dataset.class_levels):
-							running_loss[i] = 0.0
-						iter = 1
-						
-					iter +=1
+		loss_f_m = torch.mean(loss_f_vect).clone().detach()
+		loss_i1_m = torch.mean(loss_i1_vect).clone().detach()
+		loss_i2_m = torch.mean(loss_i2_vect).clone().detach()
+
+		back = False
+
+		if loss_f_m >= self.threshold:
+			loss_f = self.vect_to_scalar_loss(loss_f_vect)
+			loss_f.backward(retain_graph=True)
+			back = True
+			
+		if loss_i1_m >= self.threshold:
+			loss_i1 = self.vect_to_scalar_loss(loss_i1_vect)
+			loss_i1.backward(retain_graph=True)
+			back = True
+			
+		if loss_i2_m >= self.threshold:
+			loss_i2 = self.vect_to_scalar_loss(loss_i2_vect)
+			loss_i2.backward()
+			back = True
+
+		if back:
+			self.optimizer.step()
+		
+		return torch.tensor([loss_f_m, loss_i1_m, loss_i2_m]), torch.tensor([torch.heaviside(self.ort2, self.v).mean(), torch.heaviside(self.ort3, self.v).mean()]).clone().detach()
 
 
-	def training_loop_body(self):
+	def training_loop_body(self):			
+		for batch, labels in self.dataset.trainloader:
+			batch = batch.to(device)
+			labels = labels.to(device)
+			self.predict_and_learn(batch, labels)
+
+			
+	def training_loop_body_track(self):
 		running_loss = torch.zeros(self.dataset.class_levels)
+		running_l0 = torch.zeros(self.dataset.class_levels-1)
 		
 		iter = 1
 			
 		for batch, labels in self.dataset.trainloader:
 			batch = batch.to(device)
 			labels = labels.to(device)
-			loss = self.predict_and_learn(batch, labels)
+			loss, l0 = self.predict_and_learn(batch, labels)
 
 			running_loss += (loss - running_loss) / iter
+			running_l0 += (l0 - running_l0) / iter
 			
 			if iter & self.every_print == 0:
 				self.loss_track[self.num_push, :] = running_loss
 				self.accuracy_track[self.num_push, :] = self.test(mode = "train")
+				self.l0_track[self.num_push, :] = running_l0
 				self.num_push += 1
-				for i in np.arange(self.dataset.class_levels):
-						running_loss[i] = 0.0
+				running_loss = torch.zeros(self.dataset.class_levels)
+				running_l0 = torch.zeros(self.dataset.class_levels-1)
 				iter = 1
 
 			iter +=1
 
 	
-	def train_track(self, filename = ""):
+	def train_model(self, track = False, filename = ""):
 		self.I = torch.eye(self.layerb_mid.out_features, device = device)
 		self.I_o1 = torch.eye(self.layerb17.out_features, device = device)
 		self.I_o2 = torch.eye(self.layerb17.out_features + self.layerb27.out_features, device = device)
 		self.train()
+		training_f = self.training_loop_body
 		
-		self.loss_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels)
-		self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels)
-		self.num_push = 0
+		if track:
+			self.loss_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels)
+			self.accuracy_track = torch.zeros_like(self.loss_track)
+			self.l0_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels-1)
+			self.num_push = 0
+			training_f = self.training_loop_body_track
 
 		if self.custom_training:
-		  self.custom_training_f()
+			self.custom_training_f()
 			
-		elif self.switch_point is None:
-			for epoch in tqdm(np.arange(9), desc="Training: "):
-				self.training_loop_body()
+		elif self.switch_points is None:
+			for epoch in tqdm(self.epochs, desc="Training: "):
+				training_f()
 				
 		else:
-			for epoch in tqdm(np.arange(self.switch_point), desc="Training: "):
-				self.training_loop_body()
-	
-			self.optimizer.param_groups[0]['lr'] = self.learning_rate[1]
-	
-			for epoch in tqdm(np.arange(self.switch_point, self.epochs), desc="Training: "):
-				self.training_loop_body()
+			prev_switch_point = 0
+			for idx, switch_point in enumerate(self.switch_points):
+				for epoch in tqdm(np.arange(prev_switch_point, switch_point), desc="Training: "):
+					training_f()
+				self.optimizer.param_groups[0]['lr'] = self.learning_rate[idx]
+				prev_switch_point  = switch_point
+				
+			for epoch in tqdm(np.arange(prev_switch_point, self.epochs), desc="Training: "):
+				training_f()
 
-		self.plot_training_loss(filename+"_train_loss.pdf")
-		self.plot_test_accuracy(filename+"_test_accuracy_.pdf")
+		if track:
+			self.plot_training_loss(filename + "_train_loss.pdf")
+			self.plot_test_accuracy(filename + "_test_accuracy_.pdf")
+			self.plot_l0(filename + "_l0.pdf")
 
 		
 	def custom_training_f(self):
@@ -905,7 +987,23 @@ class CNN3(ABC, nn.Module):
 			plt.savefig(filename, bbox_inches='tight')
 		else:
 			plt.show();
-
+		
+			
+	def plot_l0(self, filename = None):
+		color2 = plt.rcParams['axes.prop_cycle'].by_key()['color'][1]
+		color3 = plt.rcParams['axes.prop_cycle'].by_key()['color'][2]
+		plt.figure(figsize=(12, 6))
+		plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.l0_track[:, 0].numpy(), color = color2, label = "Second level")
+		plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.l0_track[:, 1].numpy(), color = color3, label = "Third level")
+		plt.title("Orthogonal L0 norm")
+		plt.xlabel("Epochs")
+		plt.ylabel("Norm")
+		plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
+		plt.legend()
+		if filename is not None:
+			plt.savefig(filename, bbox_inches='tight')
+		else:
+			plt.show();
 	
 	def save_model(self, path):
 		torch.save(self.state_dict(), path+".pt")
@@ -915,9 +1013,11 @@ class CNN3(ABC, nn.Module):
 		self.load_state_dict(torch.load(path+".pt"))
 		self.eval()
 
+	
 	def num_param(self):
 		return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
+	
 	def write_configuration(self, filename, additional_info = "No"):
 		msg = ""
 		msg += "Epochs: " + str(self.epochs) + "\n\n"
@@ -925,7 +1025,10 @@ class CNN3(ABC, nn.Module):
 		for lr in self.learning_rate:
 			msg += str(lr) + " "
 		msg += "\n\n"
-		msg += "Switch point: " + str(self.switch_point) + "\n\n"
+		msg += "Switch point: "
+		for sp in self.switch_points:
+			msg += str(sp) + " "
+		msg += "\n\n"
 		msg += "Number of params: " + str(self.num_param()) + "\n\n"
 		msg += "Loss threshold: " + str(self.threshold) + "\n\n"
 		msg += "Additional info: " + additional_info
@@ -943,6 +1046,7 @@ class CNN3(ABC, nn.Module):
 		
 		return mask
 		
+
 	def c3_mask(self, c2_logits):
 		c2_labels = torch.argmax(c2_logits, dim = 1)
 		mask = torch.ones((c2_logits.size(0), self.dataset.num_c3))
@@ -951,41 +1055,11 @@ class CNN3(ABC, nn.Module):
 			mask[i, idx] = 2
 		
 		return mask
-		
+
+
 	def c2_reinforce(self, c1_logits):
-		num_rows = c1_logits.size(0)
-		self.c2_reinforcer[:num_rows,0] = self.c2_reinforcer[:num_rows,1] = c1_logits[:,0]
-		self.c2_reinforcer[:num_rows,2] = self.c2_reinforcer[:num_rows,4] = self.c2_reinforcer[:num_rows,17] = c1_logits[:,1]
-		self.c2_reinforcer[:num_rows,3] = self.c2_reinforcer[:num_rows,5] = self.c2_reinforcer[:num_rows,6] = c1_logits[:,2]
-		self.c2_reinforcer[:num_rows,7] = self.c2_reinforcer[:num_rows,13] = c1_logits[:,3]
-		self.c2_reinforcer[:num_rows,8] = self.c2_reinforcer[:num_rows,11] = self.c2_reinforcer[:num_rows,12] = self.c2_reinforcer[:num_rows,15] = self.c2_reinforcer[:num_rows,16] = c1_logits[:,4]
-		self.c2_reinforcer[:num_rows,9] = self.c2_reinforcer[:num_rows,10] = c1_logits[:,5]
-		self.c2_reinforcer[:num_rows,14] = c1_logits[:,6] 
-		self.c2_reinforcer[:num_rows,18] = self.c2_reinforcer[:num_rows,19] = c1_logits[:,7]
+		return self.dataset.c2_reinforce(c1_logits, self.c2_reinforcer)
 		
-		return self.c2_reinforcer[:num_rows,:]
-		
+
 	def c3_reinforce(self, c2_logits):
-		num_rows = c2_logits.size(0)
-		self.c3_reinforcer[:num_rows,4] = self.c3_reinforcer[:num_rows,30] = self.c3_reinforcer[:num_rows,55] = self.c3_reinforcer[:num_rows,72] = self.c3_reinforcer[:num_rows,95] = c2_logits[:,0]
-		self.c3_reinforcer[:num_rows,1] = self.c3_reinforcer[:num_rows,32] = self.c3_reinforcer[:num_rows,67] = self.c3_reinforcer[:num_rows,73] = self.c3_reinforcer[:num_rows,91] = c2_logits[:,1]
-		self.c3_reinforcer[:num_rows,54] = self.c3_reinforcer[:num_rows,62] = self.c3_reinforcer[:num_rows,70] = self.c3_reinforcer[:num_rows,82] = self.c3_reinforcer[:num_rows,92] = c2_logits[:,2]
-		self.c3_reinforcer[:num_rows,9] = self.c3_reinforcer[:num_rows,10] = self.c3_reinforcer[:num_rows,16] = self.c3_reinforcer[:num_rows,28] = self.c3_reinforcer[:num_rows,61] = c2_logits[:,3]
-		self.c3_reinforcer[:num_rows,0] = self.c3_reinforcer[:num_rows,51] = self.c3_reinforcer[:num_rows,53] = self.c3_reinforcer[:num_rows,57] = self.c3_reinforcer[:num_rows,83] = c2_logits[:,4]
-		self.c3_reinforcer[:num_rows,22] = self.c3_reinforcer[:num_rows,39] = self.c3_reinforcer[:num_rows,40] = self.c3_reinforcer[:num_rows,86] = self.c3_reinforcer[:num_rows,87] = c2_logits[:,5]
-		self.c3_reinforcer[:num_rows,5] = self.c3_reinforcer[:num_rows,20] = self.c3_reinforcer[:num_rows,25] = self.c3_reinforcer[:num_rows,84] = self.c3_reinforcer[:num_rows,94] = c2_logits[:,6]
-		self.c3_reinforcer[:num_rows,6] = self.c3_reinforcer[:num_rows,7] = self.c3_reinforcer[:num_rows,14] = self.c3_reinforcer[:num_rows,18] = self.c3_reinforcer[:num_rows,24] = c2_logits[:,7]
-		self.c3_reinforcer[:num_rows,3] = self.c3_reinforcer[:num_rows,42] = self.c3_reinforcer[:num_rows,43] = self.c3_reinforcer[:num_rows,88] = self.c3_reinforcer[:num_rows,97] = c2_logits[:,8]
-		self.c3_reinforcer[:num_rows,12] = self.c3_reinforcer[:num_rows,17] = self.c3_reinforcer[:num_rows,37] = self.c3_reinforcer[:num_rows,68] = self.c3_reinforcer[:num_rows,76] = c2_logits[:,9]
-		self.c3_reinforcer[:num_rows,23] = self.c3_reinforcer[:num_rows,33] = self.c3_reinforcer[:num_rows,49] = self.c3_reinforcer[:num_rows,60] = self.c3_reinforcer[:num_rows,71] = c2_logits[:,10]
-		self.c3_reinforcer[:num_rows,15] = self.c3_reinforcer[:num_rows,19] = self.c3_reinforcer[:num_rows,21] = self.c3_reinforcer[:num_rows,31] = self.c3_reinforcer[:num_rows,38] = c2_logits[:,11]
-		self.c3_reinforcer[:num_rows,34] = self.c3_reinforcer[:num_rows,63] = self.c3_reinforcer[:num_rows,64] = self.c3_reinforcer[:num_rows,66] = self.c3_reinforcer[:num_rows,75] = c2_logits[:,12]
-		self.c3_reinforcer[:num_rows,26] = self.c3_reinforcer[:num_rows,45] = self.c3_reinforcer[:num_rows,77] = self.c3_reinforcer[:num_rows,79] = self.c3_reinforcer[:num_rows,99] = c2_logits[:,13]
-		self.c3_reinforcer[:num_rows,2] = self.c3_reinforcer[:num_rows,11] = self.c3_reinforcer[:num_rows,35] = self.c3_reinforcer[:num_rows,46] = self.c3_reinforcer[:num_rows,98] = c2_logits[:,14]
-		self.c3_reinforcer[:num_rows,27] = self.c3_reinforcer[:num_rows,29] = self.c3_reinforcer[:num_rows,44] = self.c3_reinforcer[:num_rows,78] = self.c3_reinforcer[:num_rows,93] = c2_logits[:,15]
-		self.c3_reinforcer[:num_rows,36] = self.c3_reinforcer[:num_rows,50] = self.c3_reinforcer[:num_rows,65] = self.c3_reinforcer[:num_rows,74] = self.c3_reinforcer[:num_rows,80] = c2_logits[:,16]
-		self.c3_reinforcer[:num_rows,47] = self.c3_reinforcer[:num_rows,52] = self.c3_reinforcer[:num_rows,56] = self.c3_reinforcer[:num_rows,59] = self.c3_reinforcer[:num_rows,96] = c2_logits[:,17]
-		self.c3_reinforcer[:num_rows,8] = self.c3_reinforcer[:num_rows,13] = self.c3_reinforcer[:num_rows,48] = self.c3_reinforcer[:num_rows,58] = self.c3_reinforcer[:num_rows,90] = c2_logits[:,18]
-		self.c3_reinforcer[:num_rows,41] = self.c3_reinforcer[:num_rows,69] = self.c3_reinforcer[:num_rows,81] = self.c3_reinforcer[:num_rows,85] = self.c3_reinforcer[:num_rows,89] = c2_logits[:,19]
-		
-		return self.c3_reinforcer[:num_rows,:]
+		return self.dataset.c3_reinforce(c2_logits, self.c3_reinforcer)

@@ -1,3 +1,7 @@
+Fare script per lanciare varie configurazioni di reti
+
+
+
 usare un batch norm sulle predizioni del livello precedente per far apprendere meglio
 
 In generale capire meglio come integrare l'informazione del livello precedente
@@ -14,7 +18,7 @@ Considerare proiezioni più "rilassate" che possano far degradare il primo obiet
 
 Capire come limitare overfitting dei livelli superiori
 
-Usare logits dei livelli superiori come maschera per gli inferiori - oppure sommarli ai corrispondenti figli --- non funziona troppo in apprendimento
+Usare logits dei livelli superiori come maschera per gli inferiori - oppure sommarli ai corrispondenti figli --- 
 
 
 Utilizzo classificazione precedente sommandola direttamente ai logits delle classi
