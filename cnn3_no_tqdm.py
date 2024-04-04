@@ -516,8 +516,8 @@ class CNN3(ABC, nn.Module):
 
 		W1 = self.layerb17.weight.clone().detach()
 		W2 = self.layerb27.weight.clone().detach()
-		self.ort2 = torch.empty_like(z)
-		self.ort3 = torch.empty_like(z)
+		ort2 = torch.empty_like(z)
+		ort3 = torch.empty_like(z)
 		
 		zz = z.clone().detach()
 
@@ -527,13 +527,16 @@ class CNN3(ABC, nn.Module):
 		W2k_ = W2.matmul(Rk)
 		W2k = torch.cat((W1k, W2k_), dim = 1)
 
-		self.ort2 = self.compute_orthogonal(z, W1k, self.I_o1)
-		self.ort3 = self.compute_orthogonal(z, W2k, self.I_o2)
+		ort2 = self.compute_orthogonal(z, W1k, self.I_o1)
+		ort3 = self.compute_orthogonal(z, W2k, self.I_o2)
+		
+		self.ort2 = ort2.clone().detach()
+		self.ort3 = ort3.clone().detach()
 
-		prj2 = zz - self.ort2.clone().detach()
-		prj3 = zz - self.ort3.clone().detach()
+		prj2 = zz - self.ort2
+		prj3 = zz - self.ort3
 
-		return self.ort2, self.ort3, prj2, prj3
+		return ort2, ort3, prj2, prj3
 
 	def compute_orthogonal(self, z, W, I_o, eps = 1e-8):
 		WWT = torch.matmul(W, W.mT)
@@ -557,7 +560,7 @@ class CNN3(ABC, nn.Module):
 
 		self.optimizer.step()
 
-		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2, self.v).mean(), torch.heaviside(self.ort3, self.v).mean()]).clone().detach()
+		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2, self.v).mean(), torch.heaviside(self.ort3, self.v).mean()])
 		
 
 	def vect_to_scalar_loss(self, loss_vect):

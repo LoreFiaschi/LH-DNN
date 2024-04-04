@@ -8,7 +8,7 @@ from cnn3 import device
 from telegramBot import Terminator
 
 class BCNN3(CNN3):
-	def __init__(self, alpha, beta, gamma, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512):
+	def __init__(self, alpha, beta, gamma, weights_switch_points, learning_rate, lr_switch_points, momentum, nesterov, dataset, epochs, every_print = 512):
 		
 		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, custom_training = True)
 		
@@ -18,6 +18,9 @@ class BCNN3(CNN3):
 		self.alpha = self.alphas[0]
 		self.beta = self.betas[0]
 		self.gamma = self.gammas[0] 
+		
+		self.weights_switch_points = weights_switch_points
+		self.lr_switch_points = lr_switch_points
 
 		self.layer1  = nn.Conv2d(3, 64, (3,3), padding = 'same')
 		self.layer2  = nn.BatchNorm2d(64)
@@ -149,25 +152,6 @@ class BCNN3(CNN3):
 		return b1, b2, b3
 
 
-	def update_training_params(self, epoch):
-		if epoch == 13:
-			self.alpha = self.alphas[1]
-			self.beta = self.betas[1]
-			self.gamma = self.gammas[1]
-		elif epoch == 23:
-			self.alpha = self.alphas[2]
-			self.beta = self.betas[2]
-			self.gamma = self.gammas[2]
-		elif epoch == 33:
-			self.alpha = self.alphas[3]
-			self.beta = self.betas[3]
-			self.gamma = self.gammas[3]
-		elif epoch == 56:
-			self.optimizer.param_groups[0]['lr'] = self.learning_rate[1]
-		elif epoch == 71:
-			self.optimizer.param_groups[0]['lr'] = self.learning_rate[2]
-
-
 	def predict_and_learn(self, batch, labels):
 		self.optimizer.zero_grad()
 		predict = self(batch)
@@ -183,55 +167,82 @@ class BCNN3(CNN3):
 
 		return torch.tensor([loss1, loss2, loss3]).clone().detach(), loss.clone().detach()
 
-    
-    def custom_training_f(self, track = False, filename = ""):
-    	if track:
-    	
-    		self.loss_track_scalar = torch.zeros(self.epochs * self.track_size)
+	
+	def training_loop_body_track(self):
+		running_loss = torch.zeros(self.dataset.class_levels)
+		running_loss_scalar = 0.0
+		
+		iter = 1
+	
+		for batch, labels in self.dataset.trainloader:
+			batch = batch.to(device)
+			labels = labels.to(device)
+		
+			loss, loss_scalar = self.predict_and_learn(batch, labels)
 
-    		for epoch in np.arange(self.epochs):
-    		
-    			self.update_training_params(epoch)
-    			
-    			running_loss = torch.zeros(self.dataset.class_levels)
-    			running_loss_scalar = 0.0
-    			
-	    		iter = 1
-    		
-				for batch, labels in self.dataset.trainloader:
-					batch = batch.to(device)
-					labels = labels.to(device)
-				
-					loss, loss_scalar = self.predict_and_learn(batch, labels)
-
-					running_loss += (loss - running_loss) / iter
-					running_loss_scalar += (loss_scalar - running_loss_scalar) / iter
-					
-					if iter & self.every_print == 0:
-						self.loss_track[self.num_push, :] = running_loss
-						self.loss_track_scalar[self.num_push, :] = running_loss_scalar
-						self.accuracy_track[self.num_push, :] = self.test(mode = "train")
-						self.num_push += 1
-						running_loss = torch.zeros(self.dataset.class_levels)
-						iter = 1
-
-					iter +=1
+			running_loss += (loss - running_loss) / iter
+			running_loss_scalar += (loss_scalar - running_loss_scalar) / iter
 			
-			self.plot_training_loss_scalar(filename + "_train_loss_scalar.pdf")
-				
-    	else:
-    		for epoch in np.arange(self.epochs):
-    		
-    			self.update_training_params(epoch)
-    		
-				for batch, labels in self.dataset.trainloader:
-					batch = batch.to(device)
-					labels = labels.to(device)
-					self.predict_and_learn(batch, labels)
+			if iter & self.every_print == 0:
+				self.loss_track[self.num_push, :] = running_loss
+				self.loss_track_scalar[self.num_push, :] = running_loss_scalar
+				self.accuracy_track[self.num_push, :] = self.test(mode = "train")
+				self.num_push += 1
+				running_loss = torch.zeros(self.dataset.class_levels)
+				running_loss_scalar = 0.0
+				iter = 1
 
-    	
-    def plot_training_loss_scalar(self, filename):
-    	plt.figure(figsize=(12, 6))
+			iter +=1
+
+
+	def custom_training_f(self, track = False, filename = ""):
+	
+		training_loop_f = training_loop_body
+		
+		if track:
+			training_loop_f = training_loop_body_track
+			self.loss_track_scalar = torch.zeros(self.epochs * self.track_size)
+
+		for epoch in np.arange(self.weights_switch_points[0]):				
+			self.loop_f()
+			
+		self.alpha = self.alphas[1]
+		self.beta = self.betas[1]
+		self.gamma = self.gammas[1]
+			
+		for epoch in np.arange(self.weights_switch_points[0], self.weights_switch_points[1]):
+			self.training_loop_f()
+			
+		self.alpha = self.alphas[2]
+		self.beta = self.betas[2]
+		self.gamma = self.gammas[2]
+
+		for epoch in np.arange(self.weights_switch_points[1], self.weights_switch_points[2]):
+			self.training_loop_f()
+		
+		self.alpha = self.alphas[3]
+		self.beta = self.betas[3]
+		self.gamma = self.gammas[3]
+		
+		for epoch in np.arange(self.weights_switch_points[2], self.lr_switch_points[0]):
+			self.training_loop_f()
+			
+		self.optimizer.param_groups[0]['lr'] = self.learning_rate[1]	
+			
+		for epoch in np.arange(self.lr_switch_points[0], self.lr_switch_points[1]):
+			self.training_loop_f()
+			
+		self.optimizer.param_groups[0]['lr'] = self.learning_rate[2]
+
+		for epoch in np.arange(self.lr_switch_points[1], self.epochs):
+			self.training_loop_f()
+		
+		if track:
+			self.plot_training_loss_scalar(filename + "_train_loss_scalar.pdf")
+
+		
+	def plot_training_loss_scalar(self, filename):
+		plt.figure(figsize=(12, 6))
 		plt.plot(np.linspace(1, self.epochs, self.loss_track_scalar.size(0)), self.loss_track_scalar[:, 0].numpy())
 		plt.title("Weighted training loss")
 		plt.xlabel("Epochs")
@@ -251,10 +262,12 @@ if __name__ == '__main__':
 	epochs = 80
 	every_print = 64
 	batch_size = 128
+	weights_switch_points = [13, 23, 33]
+	lr_switch_points = [56, 71]
 	
 	bot = Terminator()
 	dataset = CIFAR100(batch_size)
-	cnn = BCNN3(alpha, beta, gamma, learning_rate, momentum, nesterov, dataset, epochs, every_print)
+	cnn = BCNN3(alpha, beta, gamma, weights_switch_points, learning_rate, lr_switch_point, momentum, nesterov, dataset, epochs, every_print)
 	cnn.to(device)
 	
 	err = False
@@ -264,7 +277,6 @@ if __name__ == '__main__':
 		cnn.train_track(filename)
 		cnn.save_model(filename)
 		msg = cnn.test(mode = "write", filename = filename)
-		cnn.write_configuration(filename)
 		
 	except Exception as errore:
 		err = errore
