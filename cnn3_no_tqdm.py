@@ -13,7 +13,6 @@ from torchvision.transforms import ToTensor, Lambda
 from abc import ABC
 import numpy as np
 import matplotlib.pyplot as plt
-#from tqdm import tqdm 
 
 
 num_cores = 8
@@ -31,6 +30,7 @@ class CIFAR10():
 		self.num_c2 = 7
 		self.num_c3 = 10
 		self.batch_size = batch_size
+		self.training_size = 50000
 
 		#--- coarse 1 classes ---
 		self.labels_c_1 = ('transport', 'animal')
@@ -95,7 +95,7 @@ class CIFAR10():
 	def c3_reinforce(self, c2_logits, c3_reinforcer):
 		pass
 		
-
+	
 	def str(self):
 		return "CIFAR10"
 
@@ -109,6 +109,7 @@ class CIFAR100():
 		self.num_c2 = 20
 		self.num_c3 = 100
 		self.batch_size = batch_size
+		self.training_size = 50000
 			   
 		transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
@@ -116,11 +117,11 @@ class CIFAR100():
 
 		self.batch_size = 128
 
-		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
+		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform, target_transform = coarser)
 
 		self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
 
-		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
+		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform, target_transform = coarser)
 
 		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 		
@@ -476,10 +477,11 @@ class CIFAR100():
 
 	def str(self):
 		return "CIFAR100"
-
+		
+		
 
 class CNN3(ABC, nn.Module):
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_points = None, custom_training = False, training_size = 50000, threshold = 0.0):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_points = None, custom_training = False, threshold = 0.0, reduction = 'mean'):
 		
 		super().__init__()
 		self.dataset = dataset
@@ -491,9 +493,10 @@ class CNN3(ABC, nn.Module):
 		self.switch_points = switch_points
 		self.custom_training = custom_training
 		self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
-		self.track_size = int( training_size / self.dataset.batch_size / every_print ) 
+		self.track_size = int( self.dataset.training_size / self.dataset.batch_size / every_print ) 
 		self.threshold = threshold
 		self.predict_and_learn = self.predict_and_learn_naive if threshold == 0.0 else self.predict_and_learn_thresholded
+		self.reduction = reduction
 		
 		self.c2_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c2), device = device)
 		self.c3_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c3), device = device)
@@ -1030,6 +1033,7 @@ class CNN3(ABC, nn.Module):
 		msg += "\n\n"
 		msg += "Number of params: " + str(self.num_param()) + "\n\n"
 		msg += "Loss threshold: " + str(self.threshold) + "\n\n"
+		msg += "Reduction: " + self.reduction + "\n\n"
 		msg += "Additional info: " + additional_info
 		
 		with open(filename+"_configuration.txt", 'w') as f:
