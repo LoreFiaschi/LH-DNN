@@ -646,7 +646,7 @@ class CNN3(ABC, nn.Module):
 			training_f = self.training_loop_body_track
 
 		if self.custom_training:
-			self.custom_training_f()
+			self.custom_training_f(track, filename)
 			
 		elif self.switch_points is None:
 			for epoch in self.epochs:
@@ -669,7 +669,7 @@ class CNN3(ABC, nn.Module):
 			self.plot_l0(filename + "_l0.pdf")
 
 		
-	def custom_training_f(self):
+	def custom_training_f(self, track = False, filename = ""):
 		pass
 
 

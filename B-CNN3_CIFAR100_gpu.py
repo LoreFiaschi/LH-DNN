@@ -171,64 +171,75 @@ class BCNN3(CNN3):
 	def predict_and_learn(self, batch, labels):
 		self.optimizer.zero_grad()
 		predict = self(batch)
-		loss =  self.alpha * self.criterion(predict[0], labels[:,0]) + \
-				self.beta * self.criterion(predict[1], labels[:,1]) + \
-				self.gamma * self.criterion(predict[2], labels[:,2])
+		
+		loss1 = self.criterion(predict[0], labels[:,0])
+		loss2 = self.criterion(predict[1], labels[:,1])
+		loss3 = self.criterion(predict[2], labels[:,2])
+		
+		loss =  self.alpha * loss1 + self.beta * loss2 + self.gamma * loss3
 
 		loss.backward()
 		self.optimizer.step()
 
-		return loss
+		return torch.tensor([loss1, loss2, loss3]).clone().detach(), loss.clone().detach()
 
     
-	def train_model(self, verbose = False):
-		self.train()
-		
-		for epoch in tqdm(np.arange(self.epochs), desc="Training: "):
-			self.update_training_params(epoch)
+    def custom_training_f(self, track = False, filename = ""):
+    	if track:
+    	
+    		self.loss_track_scalar = torch.zeros(self.epochs * self.track_size)
 
-			if verbose:
-				running_loss = 0.
+    		for epoch in np.arange(self.epochs):
+    		
+    			self.update_training_params(epoch)
+    			
+    			running_loss = torch.zeros(self.dataset.class_levels)
+    			running_loss_scalar = 0.0
+    			
+	    		iter = 1
+    		
+				for batch, labels in self.dataset.trainloader:
+					batch = batch.to(device)
+					labels = labels.to(device)
+				
+					loss, loss_scalar = self.predict_and_learn(batch, labels)
+
+					running_loss += (loss - running_loss) / iter
+					running_loss_scalar += (loss_scalar - running_loss_scalar) / iter
+					
+					if iter & self.every_print == 0:
+						self.loss_track[self.num_push, :] = running_loss
+						self.loss_track_scalar[self.num_push, :] = running_loss_scalar
+						self.accuracy_track[self.num_push, :] = self.test(mode = "train")
+						self.num_push += 1
+						running_loss = torch.zeros(self.dataset.class_levels)
+						iter = 1
+
+					iter +=1
 			
-			for iter, (batch, labels) in enumerate(self.dataset.trainloader):
-				batch = batch.to(device)
-				labels = labels.to(device)
-				loss = self.predict_and_learn(batch, labels)
+			self.plot_training_loss_scalar(filename + "_train_loss_scalar.pdf")
+				
+    	else:
+    		for epoch in np.arange(self.epochs):
+    		
+    			self.update_training_params(epoch)
+    		
+				for batch, labels in self.dataset.trainloader:
+					batch = batch.to(device)
+					labels = labels.to(device)
+					self.predict_and_learn(batch, labels)
 
-				if verbose:
-					running_loss += (loss.item() - running_loss) / (iter+1)
-					if (iter + 1) & self.every_print == 0:
-						print(f'[{epoch + 1}] loss: {running_loss :.3f}')
-						running_loss = 0.0
-
-    
-	def train_track(self, filename = None):
-		self.train()
+    	
+    def plot_training_loss_scalar(self, filename):
+    	plt.figure(figsize=(12, 6))
+		plt.plot(np.linspace(1, self.epochs, self.loss_track_scalar.size(0)), self.loss_track_scalar[:, 0].numpy())
+		plt.title("Weighted training loss")
+		plt.xlabel("Epochs")
+		plt.ylabel("Error")
+		plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
+		plt.savefig(filename, bbox_inches='tight')
+		plt.close()
 		
-		self.loss_track = torch.zeros(self.epochs * self.track_size)
-		self.accuracy_track = torch.zeros(self.epochs * self.track_size, self.dataset.class_levels)
-		num_push = 0
-		
-		for epoch in tqdm(np.arange(self.epochs), desc="Training: "):
-
-			self.update_training_params(epoch)
-
-			running_loss = 0.
-			
-			for iter, (batch, labels) in enumerate(self.dataset.trainloader):
-				batch = batch.to(device)
-				labels = labels.to(device)
-				loss = self.predict_and_learn(batch, labels)
-
-				running_loss += (loss.item() - running_loss) / (iter+1)
-				if (iter + 1) & self.every_print == 0:
-					self.loss_track[num_push] = running_loss
-					self.accuracy_track[num_push, :] = self.test(mode = "train")
-					num_push += 1
-					running_loss = 0.0
-
-		self.plot_training_loss(filename+"_train_loss.pdf")
-		self.plot_test_accuracy(filename+"_test_accuracy_.pdf")
 			
 if __name__ == '__main__':			
 	alpha = [0.98, 0.1, 0.1, 0.]
