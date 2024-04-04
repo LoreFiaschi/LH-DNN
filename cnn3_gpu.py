@@ -960,7 +960,7 @@ class CNN3(ABC, nn.Module):
 				raise AttributeError("Test mode not available")
 		
 	
-	def plot_training_loss(self, filename = None):
+	def plot_training_loss(self, filename):
 		plt.figure(figsize=(12, 6))
 		plt.plot(np.linspace(1, self.epochs, self.loss_track.size(0)), self.loss_track[:, 0].numpy(), label = "First level")
 		plt.plot(np.linspace(1, self.epochs, self.loss_track.size(0)), self.loss_track[:, 1].numpy(), label = "Second level")
@@ -970,13 +970,11 @@ class CNN3(ABC, nn.Module):
 		plt.ylabel("Error")
 		plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
 		plt.legend()
-		if filename is not None:
-			plt.savefig(filename, bbox_inches='tight')
-		else:
-			plt.show();
+		plt.savefig(filename, bbox_inches='tight')
+		plt.close()
 
 	
-	def plot_test_accuracy(self, filename = None):
+	def plot_test_accuracy(self, filename):
 		plt.figure(figsize=(12, 6))
 		plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.accuracy_track[:, 0].numpy(), label = "First level")
 		plt.plot(np.linspace(1, self.epochs, self.accuracy_track.size(0)), self.accuracy_track[:, 1].numpy(), label = "Second level")
@@ -986,13 +984,11 @@ class CNN3(ABC, nn.Module):
 		plt.ylabel("Accuracy")
 		plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
 		plt.legend()
-		if filename is not None:
-			plt.savefig(filename, bbox_inches='tight')
-		else:
-			plt.show();
+		plt.savefig(filename, bbox_inches='tight')
+		plt.close()
 		
 			
-	def plot_l0(self, filename = None):
+	def plot_l0(self, filename):
 		color2 = plt.rcParams['axes.prop_cycle'].by_key()['color'][1]
 		color3 = plt.rcParams['axes.prop_cycle'].by_key()['color'][2]
 		plt.figure(figsize=(12, 6))
@@ -1003,10 +999,9 @@ class CNN3(ABC, nn.Module):
 		plt.ylabel("Norm")
 		plt.xticks(np.linspace(1, self.epochs, self.epochs)[0::2])
 		plt.legend()
-		if filename is not None:
-			plt.savefig(filename, bbox_inches='tight')
-		else:
-			plt.show();
+		plt.savefig(filename, bbox_inches='tight')
+		plt.close()
+		
 	
 	def save_model(self, path):
 		torch.save(self.state_dict(), path+".pt")
