@@ -37,13 +37,17 @@ class Tester():
 	
 		try:
 			for num, conf in tqdm(enumerate(self.list_of_conf), desc = "Testing configuration"):
+			
+				dataset = conf.dataset(conf.batch_size)
+				
 				for model in conf.models:
-					cnn = model(conf.learning_rate, conf.momentum, conf.nesterov, conf.dataset(conf.batch_size), 
+					cnn = model(conf.learning_rate, conf.momentum, conf.nesterov, dataset, 
 							conf.epochs, conf.every_print, conf.switch_point, conf.custom_training, conf.threshold, conf.reduction)
 							
-					cnn.to(device)
 					
-					filename = "models/" + str(cnn.dataset) + "/" + str(cnn) + "_conf" + str(num)
+					filename = "models/" + str(dataset) + "/" + str(cnn) + "_conf" + str(num)
+					
+					cnn.to(device)
 					
 					cnn.train_model(conf.track, filename)
 					cnn.save_model(filename)

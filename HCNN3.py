@@ -102,7 +102,7 @@ class HCNN3_c0_b0_r(HCNN3):
 		return z
 		
 		
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c0_b0_r"
 
 
@@ -135,7 +135,7 @@ class HCNN3_c0_b1_r(HCNN3):
 		return z
 		
 
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c0_b1_r"
 		
 
@@ -175,7 +175,7 @@ class HCNN3_c0_b2_r(HCNN3):
 		return z
 
 
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c0_b2_r"
 		
 		
@@ -214,7 +214,7 @@ class HCNN3_c1_b0_r(HCNN3):
 		return z
 
 
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c1_b0_r"
 		
 		
@@ -261,7 +261,7 @@ class HCNN3_c1_b1_r(HCNN3):
 		return z
 
 
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c1_b1_r"
 		
 		
@@ -314,7 +314,7 @@ class HCNN3_c1_b2_r(HCNN3):
 		return z
 
 
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c1_b2_r"	
 
 
@@ -358,7 +358,7 @@ class HCNN3_c2_b0_r(HCNN3):
 		return z
 
 
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c2_b0_r"	
 
 
@@ -410,7 +410,7 @@ class HCNN3_c2_b1_r(HCNN3):
 		return z
 
 
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c2_b1_r"	
 	
 		
@@ -469,5 +469,5 @@ class HCNN3_c2_b2_r(HCNN3):
 		return z
 		
 		
-	def str(self):
+	def __str__(self):
 		return "HCNN3_c2_b2_r"

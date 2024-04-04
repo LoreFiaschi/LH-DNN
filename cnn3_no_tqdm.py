@@ -96,7 +96,7 @@ class CIFAR10():
 		pass
 		
 	
-	def str(self):
+	def __str__(self):
 		return "CIFAR10"
 
 
@@ -475,7 +475,7 @@ class CIFAR100():
 		return c3_reinforcer[:num_rows,:]
 
 
-	def str(self):
+	def __str__(self):
 		return "CIFAR100"
 		
 		
