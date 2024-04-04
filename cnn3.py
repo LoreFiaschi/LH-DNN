@@ -19,8 +19,8 @@ from tqdm import tqdm
 num_cores = 8
 torch.set_num_interop_threads(num_cores) # Inter-op parallelism
 torch.set_num_threads(num_cores) # Intra-op parallelism
-#device = "cuda:0"
-device = "cpu"
+device = "cuda:0"
+#device = "cpu"
 
 class CIFAR10():
 
@@ -1004,6 +1004,7 @@ class CNN3(ABC, nn.Module):
 		plt.legend()
 		plt.savefig(filename, bbox_inches='tight')
 		plt.close()
+		
 	
 	def save_model(self, path):
 		torch.save(self.state_dict(), path+".pt")
