@@ -190,7 +190,7 @@ class HCNN3_c1_b0_r(HCNN3):
 		self.layer10_2 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb_mid = nn.Linear(8*8*128, 512)
+		self.layerb_mid = nn.Linear(4*4*256, 512)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -229,7 +229,7 @@ class HCNN3_c1_b1_r(HCNN3):
 		self.layer10_2 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb11 = nn.Linear(8*8*128, 512, bias = False)
+		self.layerb11 = nn.Linear(4*4*256, 512, bias = False)
 		self.layerb12 = nn.BatchNorm1d(512)
 		self.layerb13 = nn.Dropout(0.5)
 
@@ -276,7 +276,7 @@ class HCNN3_c1_b2_r(HCNN3):
 		self.layer10_2 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb11 = nn.Linear(8*8*128, 512, bias = False)
+		self.layerb11 = nn.Linear(4*4*256, 512, bias = False)
 		self.layerb12 = nn.BatchNorm1d(512)
 		self.layerb13 = nn.Dropout(0.5)
 		self.layerb14 = nn.Linear(512, 512, bias = False)
@@ -331,7 +331,7 @@ class HCNN3_c2_b0_r(HCNN3):
 		self.layer10_4 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb_mid = nn.Linear(8*8*128, 512)
+		self.layerb_mid = nn.Linear(4*4*256, 512)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -375,7 +375,7 @@ class HCNN3_c2_b1_r(HCNN3):
 		self.layer10_4 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb11 = nn.Linear(8*8*128, 512, bias = False)
+		self.layerb11 = nn.Linear(4*4*256, 512, bias = False)
 		self.layerb12 = nn.BatchNorm1d(512)
 		self.layerb13 = nn.Dropout(0.5)
 
@@ -427,7 +427,7 @@ class HCNN3_c2_b2_r(HCNN3):
 		self.layer10_4 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb11 = nn.Linear(8*8*128, 512, bias = False)
+		self.layerb11 = nn.Linear(4*4*256, 512, bias = False)
 		self.layerb12 = nn.BatchNorm1d(512)
 		self.layerb13 = nn.Dropout(0.5)
 		self.layerb14 = nn.Linear(512, 512, bias = False)

@@ -45,7 +45,7 @@ class Tester():
 							conf.epochs, conf.every_print, conf.switch_point, conf.custom_training, conf.threshold, conf.reduction)
 							
 					
-					filename = "models/" + str(dataset) + "/" + str(cnn) + "_conf" + str(num)
+					filename = "models/" + str(dataset) + "/" + str(cnn) + "_conf_" + str(num)
 					
 					cnn.to(device)
 					
