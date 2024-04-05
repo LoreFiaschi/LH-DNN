@@ -560,7 +560,7 @@ class CNN3(ABC, nn.Module):
 
 		self.optimizer.step()
 
-		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2, self.v).mean(), torch.heaviside(self.ort3, self.v).mean()])
+		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).mean(), torch.heaviside(self.ort3-1e-7, self.v).mean()])
 		
 
 	def vect_to_scalar_loss(self, loss_vect):
@@ -598,7 +598,7 @@ class CNN3(ABC, nn.Module):
 		if back:
 			self.optimizer.step()
 		
-		return torch.tensor([loss_f_m, loss_i1_m, loss_i2_m]), torch.tensor([torch.heaviside(self.ort2, self.v).mean(), torch.heaviside(self.ort3, self.v).mean()]).clone().detach()
+		return torch.tensor([loss_f_m, loss_i1_m, loss_i2_m]), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).mean(), torch.heaviside(self.ort3-1e-7, self.v).mean()]).clone().detach()
 
 
 	def training_loop_body(self):			

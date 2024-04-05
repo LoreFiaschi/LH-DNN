@@ -77,14 +77,23 @@ if __name__ == '__main__':
 	momentum = 0.9
 	nesterov = True
 	every_print = 32
+	
+	"""
+	
 	dataset = CIFAR100
 	lr2 = [1e-3, 2e-4]
 	lr3 = [1e-3, 2e-4, 5e-5]
+	
+	"""
+	
 	list_of_models = [HCNN3_c0_b0_r, HCNN3_c0_b1_r, HCNN3_c0_b2_r, HCNN3_c1_b0_r, HCNN3_c1_b1_r, HCNN3_c1_b2_r, HCNN3_c2_b0_r, HCNN3_c2_b1_r, HCNN3_c2_b2_r]
+	
+	list_of_conf = []
+
+	"""
 
 	# changing params: learning_rate, epochs, switch_point
 	
-	list_of_conf = []
 	list_of_conf.append(Configuration(lr2, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
 	list_of_conf.append(Configuration(lr2, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
 	list_of_conf.append(Configuration(lr2, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
@@ -96,6 +105,18 @@ if __name__ == '__main__':
 	list_of_conf.append(Configuration(lr3, 15, [11, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
 	list_of_conf.append(Configuration(lr3, 17, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
 	list_of_conf.append(Configuration(lr3, 20, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
+	
+	"""
+	
+	dataset = CIFAR10
+	lr = [3e-3, 5e-4]
+	
+	list_of_conf.append(Configuration(lr, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
+	list_of_conf.append(Configuration(lr, 11, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
+	list_of_conf.append(Configuration(lr, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
+	list_of_conf.append(Configuration(lr, 11, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
+	list_of_conf.append(Configuration(lr, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
+	list_of_conf.append(Configuration(lr, 20, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
 	
 	t = Tester(list_of_conf)
 	
