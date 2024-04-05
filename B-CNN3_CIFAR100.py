@@ -260,7 +260,7 @@ if __name__ == '__main__':
 	momentum = 0.9
 	nesterov = True
 	epochs = 80
-	every_print = 64
+	every_print = 32
 	batch_size = 128
 	weights_switch_points = [13, 23, 33]
 	lr_switch_points = [56, 71]
