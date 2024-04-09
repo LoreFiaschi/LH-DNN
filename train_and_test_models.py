@@ -1,14 +1,19 @@
 from telegramBot import Terminator
 import HCNN3
-from HCNN3 import HCNN3_c0_b0_r, HCNN3_c0_b1_r, HCNN3_c0_b2_r, HCNN3_c1_b0_r, HCNN3_c1_b1_r, HCNN3_c1_b2_r, HCNN3_c2_b0_r, HCNN3_c2_b1_r, HCNN3_c2_b2_r
+from HCNN3 import HCNN3_c0_b0_r, HCNN3_c0_b1_r, HCNN3_c0_b2_r 
+from HCNN3 import HCNN3_c1_b0_r, HCNN3_c1_b1_r, HCNN3_c1_b2_r
+from HCNN3 import HCNN3_c2_b0_r, HCNN3_c2_b1_r, HCNN3_c2_b2_r
+from HCNN3 import HCNN3_c3_b0_r, HCNN3_c3_b1_r, HCNN3_c3_b2_r
+from HCNN3 import HCNN3_c4_b0_r, HCNN3_c4_b1_r, HCNN3_c4_b2_r
 from cnn3 import CIFAR100, CIFAR10
 from cnn3 import device
 from tqdm import tqdm 
+import sys
 
 
 class Configuration:
 	
-	def __init__(self, learning_rate, epochs, switch_point, batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size):
+	def __init__(self, learning_rate, epochs, switch_point, batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded):
 		
 		self.learning_rate = learning_rate
 		self.momentum = momentum
@@ -24,6 +29,23 @@ class Configuration:
 		self.batch_size = batch_size
 		self.models = list_of_models
 		self.branch_size = branch_size
+		self.only_thresholded = only_thresholded
+		
+		
+	def __str__(self):
+		msg = ""
+		msg += "Epochs: " + str(self.epochs) + "\n"
+		msg += "LR: " 
+		for lr in self.learning_rate:
+			msg += str(lr) + " "
+		msg += "\n"
+		msg += "Switch point: "
+		for sp in self.switch_points:
+			msg += str(sp) + " "
+		msg += "\n"
+		msg += "Loss threshold: " + str(self.threshold) + "\n"
+		msg += "Only thresholded: " + str(self.only_thresholded) + "\n"
+		msg += "Reduction: " + self.reduction
 
 
 class Tester():
@@ -37,16 +59,22 @@ class Tester():
 	def launch(self):
 	
 		try:
-			for num, conf in tqdm(enumerate(self.list_of_conf), desc = "Testing configuration"):
+		
+			resume = ""
+			num_conf = len(self.list_of_conf)
 			
+			for num in tqdm(range(num_conf)), desc = "Testing configuration"):
+			
+				conf = self.list_of_conf[num]
 				dataset = conf.dataset(conf.batch_size)
 				
 				for model in conf.models:
 					cnn = model(conf.learning_rate, conf.momentum, conf.nesterov, dataset, 
-							conf.epochs, conf.every_print, conf.switch_point, conf.custom_training, conf.threshold, conf.reduction, conf.branch_size)
+							conf.epochs, conf.every_print, conf.switch_point, conf.custom_training, conf.threshold, conf.reduction, conf.branch_size, conf.only_thresholded)
 							
 					
 					filename = "models/" + str(dataset) + "/" + str(cnn) + "_conf_" + str(num)
+					resume += '\t' + str(cnn) + "_conf_" + str(num) + '\n'
 					
 					cnn.to(device)
 					
@@ -55,12 +83,29 @@ class Tester():
 					msg = cnn.test(mode = "write", filename = filename)
 					cnn.write_configuration(filename, "reinforce\n\n" + msg)
 					
+					resume += msg + '\n\n'
+					
+			
+			resume_filename = "models/" + str(dataset) + "/" + "test_resume.txt"
+					
+			with open(resume_filename, 'w') as f:
+				f.write(resume)
+					
 		except Exception as error:
 			self.bot.sendMessage("Programma NON terminato correttamente\nTipo di errore: " + error.__class__.__name__ + "\nMessaggio: " + str(error))
 			raise error
-
-
+			
 		self.bot.sendMessage("Test completato correttamente")
+		
+		
+	def write_legend(self, filename):
+		msg = ""
+		for num_conf, conf in enumerate(self.list_of_conf):
+			msg += f'\tConfiguration {num}\n'
+			msg += str(conf) + "\n\n"
+			
+		with open(filename, 'w') as f:
+				f.write(msg)
 
 
 if __name__ == '__main__':
@@ -78,51 +123,66 @@ if __name__ == '__main__':
 	momentum = 0.9
 	nesterov = True
 	every_print = 32
-	
-	"""
-	
-	dataset = CIFAR100
-	lr2 = [1e-3, 2e-4]
-	lr3 = [1e-3, 2e-4, 5e-5]
-	branch_size = 512
-	
-	"""
-	
-	list_of_models = [HCNN3_c0_b0_r, HCNN3_c0_b1_r, HCNN3_c0_b2_r, HCNN3_c1_b0_r, HCNN3_c1_b1_r, HCNN3_c1_b2_r, HCNN3_c2_b0_r, HCNN3_c2_b1_r, HCNN3_c2_b2_r]
-	
+	list_of_models = [HCNN3_c0_b0_r, HCNN3_c0_b1_r, HCNN3_c0_b2_r,
+						HCNN3_c1_b0_r, HCNN3_c1_b1_r, HCNN3_c1_b2_r,
+						HCNN3_c2_b0_r, HCNN3_c2_b1_r, HCNN3_c2_b2_r,
+						HCNN3_c3_b0_r, HCNN3_c3_b1_r, HCNN3_c3_b2_r,
+						HCNN3_c4_b0_r, HCNN3_c4_b1_r, HCNN3_c4_b2_r]
 	list_of_conf = []
+	
+	if sys.argv[1] == "CIFAR100":
 
-	"""
+		dataset = CIFAR100
+		lr2 = [1e-3, 2e-4]
+		lr3 = [1e-3, 2e-4, 5e-5]
+		branch_size_list = [512, 1024]
+		only_thresholded = False
+		
+		# changing params: learning_rate, epochs, switch_point
+		for branch_size in branch_size_list:
+			list_of_conf.append(Configuration(lr2, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr2, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr2, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr2, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr2, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr3, 15, [9, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr3, 15, [11, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr3, 20, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+	
+	elif sys.argv[1] == "CIFAR10":
+	
+		dataset = CIFAR10
+		lr = [3e-3, 5e-4]
+		#branch_size_list = [128, 256, 512]
+		branch_size_list = [256, 512]
+		only_thresholded = True
+		
+		for branch_size in branch_size_list:
+			list_of_conf.append(Configuration(lr, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr, 11, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr, 20, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+			list_of_conf.append(Configuration(lr, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+	
+	elif sys.argv[1] == "prova":
+		dataset = CIFAR100
+		lr = [1e-3, 2e-4]
+		branch_size = 512
+		only_thresholded = False
+		
+		list_of_models = [HCNN3_c0_b2_r, HCNN3_c1_b2_r, HCNN3_c2_b2_r, HCNN3_c3_b2_r, HCNN3_c4_b2_r]
+		
+		list_of_conf.append(Configuration(lr, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, only_thresholded))
+		
+	else:
+		raise ValueError(f'Test for {sys.argv[1]} is not supported yet.')
 
-	# changing params: learning_rate, epochs, switch_point
-	
-	list_of_conf.append(Configuration(lr2, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr2, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr2, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr2, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr2, 15, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr2, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr2, 20, [12], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr3, 15, [9, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr3, 15, [11, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr3, 17, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr3, 20, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	
-	"""
-	
-	dataset = CIFAR10
-	lr = [3e-3, 5e-4]
-	branch_size = 128
-	
-	list_of_conf.append(Configuration(lr, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr, 11, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr, 11, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr, 20, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
-	list_of_conf.append(Configuration(lr, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+
 	
 	t = Tester(list_of_conf)
 	
 	t.launch()
+	
+	t.write_legend("models/" + str(dataset) + "/configurations_legend.txt")

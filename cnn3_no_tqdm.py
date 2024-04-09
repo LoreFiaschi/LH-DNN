@@ -15,7 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-num_cores = 8
+num_cores = 36
 torch.set_num_interop_threads(num_cores) # Inter-op parallelism
 torch.set_num_threads(num_cores) # Intra-op parallelism
 device = "cuda:0"
@@ -494,7 +494,7 @@ class CIFAR100():
 		
 
 class CNN3(ABC, nn.Module):
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_points = None, custom_training = False, threshold = 0.0, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_points = None, custom_training = False, threshold = 0.0, reduction = 'mean', only_thresholded = False):
 		
 		super().__init__()
 		self.dataset = dataset
@@ -508,8 +508,9 @@ class CNN3(ABC, nn.Module):
 		self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
 		self.track_size = int( self.dataset.training_size / self.dataset.batch_size / every_print ) 
 		self.threshold = threshold
-		self.predict_and_learn = self.predict_and_learn_naive if threshold == 0.0 else self.predict_and_learn_thresholded
+		self.predict_and_learn = self.predict_and_learn_naive if threshold == 0.0 else (self.predict_and_learn_only_thresholded if only_thresholded else self.predict_and_learn_thresholded)
 		self.reduction = reduction
+		self.only_thresholded = only_thresholded
 		
 		self.c2_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c2), device = device)
 		self.c3_reinforcer = torch.empty((self.dataset.batch_size, self.dataset.num_c3), device = device)
@@ -517,7 +518,7 @@ class CNN3(ABC, nn.Module):
 		self.v = torch.tensor(0., device = device)
 		
 		if switch_points is not None and len(switch_points) != len(learning_rate)-1:
-			raise ValueError("switch_points and learning_rate must have the same number of elements")
+			raise ValueError("switch_points must have the one element less than learning_rate ")
 
 	
 	def forward(self, x):
@@ -612,6 +613,37 @@ class CNN3(ABC, nn.Module):
 			self.optimizer.step()
 		
 		return torch.tensor([loss_f_m, loss_i1_m, loss_i2_m]), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).sum(dim=1).mean(), torch.heaviside(self.ort3-1e-7, self.v).sum(dim=1).mean()]).clone().detach()
+
+
+	def predict_and_learn_only_thresholded(self, batch, labels):
+		self.optimizer.zero_grad()
+		predict = self(batch)
+		loss_f_vect = self.criterion(predict[0], labels[:,0]) 
+		loss_i1_vect = self.criterion(predict[1], labels[:,1])
+		loss_i2_vect = self.criterion(predict[2], labels[:,2])
+
+		loss_f = self.vect_to_scalar_loss(loss_f_vect)
+		loss_i1 = self.vect_to_scalar_loss(loss_i1_vect)
+		loss_i2 = self.vect_to_scalar_loss(loss_i2_vect)
+
+		back = False
+
+		if loss_f.isnan() == False:
+			loss_f.backward(retain_graph=True)
+			back = True
+			
+		if loss_i1_m.isnan() == False:
+			loss_i1.backward(retain_graph=True)
+			back = True
+			
+		if loss_i2_m.isnan() == False:
+			loss_i2.backward()
+			back = True
+
+		if back:
+			self.optimizer.step()
+		
+		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).sum(dim=1).mean(), torch.heaviside(self.ort3-1e-7, self.v).sum(dim=1).mean()]).clone().detach()
 
 
 	def training_loop_body(self):			
@@ -752,81 +784,6 @@ class CNN3(ABC, nn.Module):
 
 
 	def test_results_to_text(self):
-	
-		if self.dataset.num_c3 <= 20:
-			return self.test_results_to_text_s20()
-		
-		return self.test_results_to_text_l20()
-
-	
-	def test_results_to_text_s20(self):
-		str = ""
-		
-		# accuracy for each class		
-		for i in np.arange(self.dataset.num_c1):
-			accuracy_c1 = 100 * float(self.correct_c1_pred[i]) / self.total_c1_pred[i]
-			str += f'Accuracy for class {self.dataset.labels_c1[i]:5s}: {accuracy_c1:.2f} %'
-			str += '\n'
-
-		str += '\n'
-		
-		for i in np.arange(self.dataset.num_c2):
-			accuracy_c2 = 100 * float(self.correct_c2_pred[i]) / self.total_c2_pred[i]
-			str += f'Accuracy for class {self.dataset.labels_c2[i]:5s}: {accuracy_c2:.2f} %'
-			str += '\n'
-			
-		str += '\n'
-		
-		for i in np.arange(self.dataset.num_c3):
-			accuracy_c3 = 100 * float(self.correct_c3_pred[i]) / self.total_c3_pred[i]
-			str += f'Accuracy for class {self.dataset.labels_c3[i]:5s}: {accuracy_c3:.2f} %'
-			str += '\n'
-			
-		# accuracy for the whole dataset
-		str += '\n'
-
-		str += f'Accuracy on c1: {(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
-		str += '\n'
-
-		str += f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
-		str += '\n'
-
-		str += f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
-		str += '\n'
-		
-		str += '\n'
-		
-		str += f'Cross-accuracy c1 vs c2: {100 * float(self.correct_c1_vs_c2_pred.sum()) / self.total_c1_vs_c2_pred.sum():.2f} %'
-		str += '\n'
-		str += f'Cross-accuracy c2 vs c3: {100 * float(self.correct_c2_vs_c3_pred.sum()) / self.total_c2_vs_c3_pred.sum():.2f} %'
-		str += '\n'
-		str += f'Cross-accuracy c1 vs c3: {100 * float(self.correct_c1_vs_c3_pred.sum()) / self.total_c1_vs_c3_pred.sum():.2f} %'
-		str += '\n\n'
-
-		# cross classes accuracy (tree)
-		for i in np.arange(self.dataset.num_c1):
-			accuracy_c1_c2 = 100 * float(self.correct_c1_vs_c2_pred[i]) / self.total_c1_vs_c2_pred[i]
-			str += f'Cross-accuracy {self.dataset.labels_c1[i]:9s} vs c2: {accuracy_c1_c2:.2f} %'
-			str += '\n'
-			
-		str += '\n'
-		
-		for i in np.arange(self.dataset.num_c2):
-			accuracy_c2_c3 = 100 * float(self.correct_c2_vs_c3_pred[i]) / self.total_c2_vs_c3_pred[i]
-			str += f'Cross-accuracy {self.dataset.labels_c2[i]:7s} vs c3: {accuracy_c2_c3:.2f} %'
-			str += '\n'
-			
-		str += '\n'
-		
-		for i in np.arange(self.dataset.num_c1):
-			accuracy_c1_c3 = 100 * float(self.correct_c1_vs_c3_pred[i]) / self.total_c1_vs_c3_pred[i]
-			str += f'Cross-accuracy {self.dataset.labels_c1[i]:9s} vs c3: {accuracy_c1_c3:.2f} %'
-			str += '\n'
-
-		return str, str
-		
-		
-	def test_results_to_text_l20(self):
 		str_bot = ""
 		str = ""
 		
@@ -1043,6 +1000,7 @@ class CNN3(ABC, nn.Module):
 		msg += "\n\n"
 		msg += "Number of params: " + str(self.num_param()) + "\n\n"
 		msg += "Loss threshold: " + str(self.threshold) + "\n\n"
+		msg += "Only thresholded: " + str(self.only_thresholded) + "\n\n"
 		msg += "Reduction: " + self.reduction + "\n\n"
 		msg += "Additional info: " + additional_info
 		
