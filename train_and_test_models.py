@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 class Configuration:
 	
-	def __init__(self, learning_rate, epochs, switch_point, batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models):
+	def __init__(self, learning_rate, epochs, switch_point, batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size):
 		
 		self.learning_rate = learning_rate
 		self.momentum = momentum
@@ -23,6 +23,7 @@ class Configuration:
 		self.dataset = dataset
 		self.batch_size = batch_size
 		self.models = list_of_models
+		self.branch_size = branch_size
 
 
 class Tester():
@@ -42,7 +43,7 @@ class Tester():
 				
 				for model in conf.models:
 					cnn = model(conf.learning_rate, conf.momentum, conf.nesterov, dataset, 
-							conf.epochs, conf.every_print, conf.switch_point, conf.custom_training, conf.threshold, conf.reduction)
+							conf.epochs, conf.every_print, conf.switch_point, conf.custom_training, conf.threshold, conf.reduction, conf.branch_size)
 							
 					
 					filename = "models/" + str(dataset) + "/" + str(cnn) + "_conf_" + str(num)
@@ -83,6 +84,7 @@ if __name__ == '__main__':
 	dataset = CIFAR100
 	lr2 = [1e-3, 2e-4]
 	lr3 = [1e-3, 2e-4, 5e-5]
+	branch_size = 512
 	
 	"""
 	
@@ -94,29 +96,32 @@ if __name__ == '__main__':
 
 	# changing params: learning_rate, epochs, switch_point
 	
-	list_of_conf.append(Configuration(lr2, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr2, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr2, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr2, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr2, 15, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr2, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr2, 20, [12], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr3, 15, [9, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr3, 15, [11, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr3, 17, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr3, 20, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
+	list_of_conf.append(Configuration(lr2, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr2, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr2, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr2, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr2, 15, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr2, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr2, 20, [12], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr3, 15, [9, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr3, 15, [11, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr3, 17, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr3, 20, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
 	
 	"""
 	
 	dataset = CIFAR10
 	lr = [3e-3, 5e-4]
+	branch_size = 128
 	
-	list_of_conf.append(Configuration(lr, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr, 11, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr, 11, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
-	list_of_conf.append(Configuration(lr, 20, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models))
+	list_of_conf.append(Configuration(lr, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr, 11, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr, 11, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr, 20, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
+	list_of_conf.append(Configuration(lr, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size))
 	
 	t = Tester(list_of_conf)
 	

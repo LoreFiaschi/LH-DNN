@@ -8,9 +8,11 @@ from cnn3 import np
 
 class HCNN3(CNN3):
 	
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size = 512):
 		
 		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		
+		self.branch_size = branch_size
 		
 		self.layer1  = nn.Conv2d(3, 64, (3,3), padding = 'same', bias = False)
 		self.layer2  = nn.BatchNorm2d(64)
@@ -24,13 +26,13 @@ class HCNN3(CNN3):
 		self.layer9  = nn.BatchNorm2d(128)
 		self.layer10 = nn.MaxPool2d((2,2), stride = (2,2))
 		
-		self.layerb17 = nn.Linear(512, self.dataset.num_c1)
+		self.layerb17 = nn.Linear(self.branch_size, self.dataset.num_c1)
 		
-		self.layerb27 = nn.Linear(512, self.dataset.num_c2)
-		self.layerb27__ = nn.Linear(512, self.dataset.num_c2)
+		self.layerb27 = nn.Linear(self.branch_size, self.dataset.num_c2)
+		self.layerb27__ = nn.Linear(self.branch_size, self.dataset.num_c2)
 		
-		self.layerb37 = nn.Linear(512, self.dataset.num_c3)
-		self.layerb37__ = nn.Linear(512, self.dataset.num_c3)
+		self.layerb37 = nn.Linear(self.branch_size, self.dataset.num_c3)
+		self.layerb37__ = nn.Linear(self.branch_size, self.dataset.num_c3)
 	
 	
 	def forward_conv(self, x):
@@ -84,11 +86,11 @@ class HCNN3(CNN3):
 
 class HCNN3_c0_b0_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 
-		self.layerb_mid = nn.Linear(8*8*128, 512)
+		self.layerb_mid = nn.Linear(8*8*128, self.branch_size)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -109,15 +111,15 @@ class HCNN3_c0_b0_r(HCNN3):
 
 class HCNN3_c0_b1_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 
-		self.layerb11 = nn.Linear(8*8*128, 512, bias = False)
-		self.layerb12 = nn.BatchNorm1d(512)
+		self.layerb11 = nn.Linear(8*8*128, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
 		self.layerb13 = nn.Dropout(0.5)
 
-		self.layerb_mid = nn.Linear(512, 512)
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -142,18 +144,18 @@ class HCNN3_c0_b1_r(HCNN3):
 		
 class HCNN3_c0_b2_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 
-		self.layerb11 = nn.Linear(8*8*128, 512, bias = False)
-		self.layerb12 = nn.BatchNorm1d(512)
+		self.layerb11 = nn.Linear(8*8*128, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
 		self.layerb13 = nn.Dropout(0.5)
-		self.layerb14 = nn.Linear(512, 512, bias = False)
-		self.layerb15 = nn.BatchNorm1d(512)
+		self.layerb14 = nn.Linear(self.branch_size, self.branch_size, bias = False)
+		self.layerb15 = nn.BatchNorm1d(self.branch_size)
 		self.layerb16 = nn.Dropout(0.5)
 
-		self.layerb_mid = nn.Linear(512, 512)
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -182,15 +184,15 @@ class HCNN3_c0_b2_r(HCNN3):
 		
 class HCNN3_c1_b0_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb_mid = nn.Linear(4*4*256, 512)
+		self.layerb_mid = nn.Linear(4*4*256, self.branch_size)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -221,19 +223,19 @@ class HCNN3_c1_b0_r(HCNN3):
 
 class HCNN3_c1_b1_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb11 = nn.Linear(4*4*256, 512, bias = False)
-		self.layerb12 = nn.BatchNorm1d(512)
+		self.layerb11 = nn.Linear(4*4*256, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
 		self.layerb13 = nn.Dropout(0.5)
 
-		self.layerb_mid = nn.Linear(512, 512)
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -268,22 +270,22 @@ class HCNN3_c1_b1_r(HCNN3):
 		
 class HCNN3_c1_b2_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb11 = nn.Linear(4*4*256, 512, bias = False)
-		self.layerb12 = nn.BatchNorm1d(512)
+		self.layerb11 = nn.Linear(4*4*256, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
 		self.layerb13 = nn.Dropout(0.5)
-		self.layerb14 = nn.Linear(512, 512, bias = False)
-		self.layerb15 = nn.BatchNorm1d(512)
+		self.layerb14 = nn.Linear(self.branch_size, self.branch_size, bias = False)
+		self.layerb15 = nn.BatchNorm1d(self.branch_size)
 		self.layerb16 = nn.Dropout(0.5)
 
-		self.layerb_mid = nn.Linear(512, 512)
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -321,9 +323,9 @@ class HCNN3_c1_b2_r(HCNN3):
 
 class HCNN3_c2_b0_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -331,7 +333,7 @@ class HCNN3_c2_b0_r(HCNN3):
 		self.layer10_4 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb_mid = nn.Linear(4*4*256, 512)
+		self.layerb_mid = nn.Linear(4*4*256, self.branch_size)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -365,9 +367,9 @@ class HCNN3_c2_b0_r(HCNN3):
 
 class HCNN3_c2_b1_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -375,11 +377,11 @@ class HCNN3_c2_b1_r(HCNN3):
 		self.layer10_4 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb11 = nn.Linear(4*4*256, 512, bias = False)
-		self.layerb12 = nn.BatchNorm1d(512)
+		self.layerb11 = nn.Linear(4*4*256, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
 		self.layerb13 = nn.Dropout(0.5)
 
-		self.layerb_mid = nn.Linear(512, 512)
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
 
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -417,9 +419,9 @@ class HCNN3_c2_b1_r(HCNN3):
 		
 class HCNN3_c2_b2_r(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean'):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -427,14 +429,14 @@ class HCNN3_c2_b2_r(HCNN3):
 		self.layer10_4 = nn.BatchNorm2d(256)
 		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
 
-		self.layerb11 = nn.Linear(4*4*256, 512, bias = False)
-		self.layerb12 = nn.BatchNorm1d(512)
+		self.layerb11 = nn.Linear(4*4*256, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
 		self.layerb13 = nn.Dropout(0.5)
-		self.layerb14 = nn.Linear(512, 512, bias = False)
-		self.layerb15 = nn.BatchNorm1d(512)
+		self.layerb14 = nn.Linear(self.branch_size, self.branch_size, bias = False)
+		self.layerb15 = nn.BatchNorm1d(self.branch_size)
 		self.layerb16 = nn.Dropout(0.5)
 
-		self.layerb_mid = nn.Linear(512, 512)
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
 		
 		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
 		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
@@ -471,3 +473,380 @@ class HCNN3_c2_b2_r(HCNN3):
 		
 	def __str__(self):
 		return "HCNN3_c2_b2_r"
+		
+
+class HCNN3_c3_b0_r(HCNN3):
+
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
+
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
+		
+		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_2 = nn.BatchNorm2d(256)
+		self.layer10_3 = nn.Conv2d(256, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_4 = nn.BatchNorm2d(256)
+		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
+		
+		self.layer10_6 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_7 = nn.BatchNorm2d(512)
+        self.layer10_10 = nn.MaxPool2d((2,2), stride = (2,2))
+
+		self.layerb_mid = nn.Linear(2*2*512, self.branch_size)
+
+		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
+		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
+
+
+	def forward_conv(self, z):
+		
+		z = self.layer10_1(z)
+		z = self.activation(z)
+		z = self.layer10_2(z)
+		z = self.layer10_3(z)
+		z = self.activation(z)
+		z = self.layer10_4(z)
+		z = self.layer10_5(z)
+		
+		z = self.layer10_6(z)
+        z = self.activation(z)
+        z = self.layer10_7(z)
+        z = self.layer10_10(z)
+		
+		return z
+
+	
+	def forward_branch(self, z):
+	
+		z = self.layerb_mid(z)
+		z = self.activation(z)
+		
+		return z
+
+
+	def __str__(self):
+		return "HCNN3_c3_b0_r"	
+
+
+
+class HCNN3_c3_b1_r(HCNN3):
+
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
+
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
+		
+		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_2 = nn.BatchNorm2d(256)
+		self.layer10_3 = nn.Conv2d(256, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_4 = nn.BatchNorm2d(256)
+		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
+		
+		self.layer10_6 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_7 = nn.BatchNorm2d(512)
+        self.layer10_10 = nn.MaxPool2d((2,2), stride = (2,2))
+
+		self.layerb11 = nn.Linear(2*2*512, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
+		self.layerb13 = nn.Dropout(0.5)
+
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
+
+		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
+		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
+
+
+	def forward_conv(self, z):
+		
+		z = self.layer10_1(z)
+		z = self.activation(z)
+		z = self.layer10_2(z)
+		z = self.layer10_3(z)
+		z = self.activation(z)
+		z = self.layer10_4(z)
+		z = self.layer10_5(z)
+		
+		z = self.layer10_6(z)
+        z = self.activation(z)
+        z = self.layer10_7(z)
+        z = self.layer10_10(z)
+		
+		return z
+
+	
+	def forward_branch(self, z):
+		
+		z = self.layerb11(z)
+		z = self.activation(z)
+		z = self.layerb12(z)
+		z = self.layerb13(z)
+		z = self.layerb_mid(z)
+		z = self.activation(z)
+		
+		return z
+
+
+	def __str__(self):
+		return "HCNN3_c3_b1_r"	
+	
+		
+		
+class HCNN3_c3_b2_r(HCNN3):
+
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
+
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
+		
+		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_2 = nn.BatchNorm2d(256)
+		self.layer10_3 = nn.Conv2d(256, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_4 = nn.BatchNorm2d(256)
+		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
+		
+		self.layer10_6 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_7 = nn.BatchNorm2d(512)
+        self.layer10_10 = nn.MaxPool2d((2,2), stride = (2,2))
+
+		self.layerb11 = nn.Linear(2*2*512, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
+		self.layerb13 = nn.Dropout(0.5)
+		self.layerb14 = nn.Linear(self.branch_size, self.branch_size, bias = False)
+		self.layerb15 = nn.BatchNorm1d(self.branch_size)
+		self.layerb16 = nn.Dropout(0.5)
+
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
+		
+		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
+		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
+
+
+	def forward_conv(self, z):
+		
+		z = self.layer10_1(z)
+		z = self.activation(z)
+		z = self.layer10_2(z)
+		z = self.layer10_3(z)
+		z = self.activation(z)
+		z = self.layer10_4(z)
+		z = self.layer10_5(z)
+		
+		z = self.layer10_6(z)
+        z = self.activation(z)
+        z = self.layer10_7(z)
+        z = self.layer10_10(z)
+		
+		return z
+
+	
+	def forward_branch(self, z):
+		
+		z = self.layerb11(z)
+		z = self.activation(z)
+		z = self.layerb12(z)
+		z = self.layerb13(z)
+		z = self.layerb14(z)
+		z = self.activation(z)
+		z = self.layerb15(z)
+		z = self.layerb16(z)
+		z = self.layerb_mid(z)
+		z = self.activation(z)
+		
+		return z
+		
+		
+	def __str__(self):
+		return "HCNN3_c3_b2_r"
+		
+		
+class HCNN3_c4_b0_r(HCNN3):
+
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
+
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
+		
+		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_2 = nn.BatchNorm2d(256)
+		self.layer10_3 = nn.Conv2d(256, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_4 = nn.BatchNorm2d(256)
+		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
+		
+		self.layer10_6 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_7 = nn.BatchNorm2d(512)
+        self.layer10_8 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_9 = nn.BatchNorm2d(512)
+        self.layer10_10 = nn.MaxPool2d((2,2), stride = (2,2))
+
+		self.layerb_mid = nn.Linear(2*2*512, self.branch_size)
+
+		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
+		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
+
+
+	def forward_conv(self, z):
+		
+		z = self.layer10_1(z)
+		z = self.activation(z)
+		z = self.layer10_2(z)
+		z = self.layer10_3(z)
+		z = self.activation(z)
+		z = self.layer10_4(z)
+		z = self.layer10_5(z)
+		
+		z = self.layer10_6(z)
+        z = self.activation(z)
+        z = self.layer10_7(z)
+        z = self.layer10_8(z)
+        z = self.activation(z)
+        z = self.layer10_9(z)
+        z = self.layer10_10(z)
+		
+		return z
+
+	
+	def forward_branch(self, z):
+	
+		z = self.layerb_mid(z)
+		z = self.activation(z)
+		
+		return z
+
+
+	def __str__(self):
+		return "HCNN3_c4_b0_r"	
+
+
+
+class HCNN3_c4_b1_r(HCNN3):
+
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
+
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
+		
+		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_2 = nn.BatchNorm2d(256)
+		self.layer10_3 = nn.Conv2d(256, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_4 = nn.BatchNorm2d(256)
+		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
+		
+		self.layer10_6 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_7 = nn.BatchNorm2d(512)
+        self.layer10_8 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_9 = nn.BatchNorm2d(512)
+        self.layer10_10 = nn.MaxPool2d((2,2), stride = (2,2))
+
+		self.layerb11 = nn.Linear(2*2*512, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
+		self.layerb13 = nn.Dropout(0.5)
+
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
+
+		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
+		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
+
+
+	def forward_conv(self, z):
+		
+		z = self.layer10_1(z)
+		z = self.activation(z)
+		z = self.layer10_2(z)
+		z = self.layer10_3(z)
+		z = self.activation(z)
+		z = self.layer10_4(z)
+		z = self.layer10_5(z)
+		
+		z = self.layer10_6(z)
+        z = self.activation(z)
+        z = self.layer10_7(z)
+        z = self.layer10_8(z)
+        z = self.activation(z)
+        z = self.layer10_9(z)
+        z = self.layer10_10(z)
+		
+		return z
+
+	
+	def forward_branch(self, z):
+		
+		z = self.layerb11(z)
+		z = self.activation(z)
+		z = self.layerb12(z)
+		z = self.layerb13(z)
+		z = self.layerb_mid(z)
+		z = self.activation(z)
+		
+		return z
+
+
+	def __str__(self):
+		return "HCNN3_c4_b1_r"	
+	
+		
+		
+class HCNN3_c4_b2_r(HCNN3):
+
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512):
+
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size)
+		
+		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_2 = nn.BatchNorm2d(256)
+		self.layer10_3 = nn.Conv2d(256, 256, (3,3), padding = 'same', bias = False)
+		self.layer10_4 = nn.BatchNorm2d(256)
+		self.layer10_5 = nn.MaxPool2d((2,2), stride = (2,2))
+		
+		self.layer10_6 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_7 = nn.BatchNorm2d(512)
+        self.layer10_8 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
+        self.layer10_9 = nn.BatchNorm2d(512)
+        self.layer10_10 = nn.MaxPool2d((2,2), stride = (2,2))
+
+		self.layerb11 = nn.Linear(2*2*512, self.branch_size, bias = False)
+		self.layerb12 = nn.BatchNorm1d(self.branch_size)
+		self.layerb13 = nn.Dropout(0.5)
+		self.layerb14 = nn.Linear(self.branch_size, self.branch_size, bias = False)
+		self.layerb15 = nn.BatchNorm1d(self.branch_size)
+		self.layerb16 = nn.Dropout(0.5)
+
+		self.layerb_mid = nn.Linear(self.branch_size, self.branch_size)
+		
+		self.optimizer = optim.SGD(self.parameters(), lr = self.learning_rate[0], momentum = self.momentum, nesterov = self.nesterov)
+		self.criterion = nn.CrossEntropyLoss(reduction = reduction)
+
+
+	def forward_conv(self, z):
+		
+		z = self.layer10_1(z)
+		z = self.activation(z)
+		z = self.layer10_2(z)
+		z = self.layer10_3(z)
+		z = self.activation(z)
+		z = self.layer10_4(z)
+		z = self.layer10_5(z)
+		
+		z = self.layer10_6(z)
+        z = self.activation(z)
+        z = self.layer10_7(z)
+        z = self.layer10_8(z)
+        z = self.activation(z)
+        z = self.layer10_9(z)
+        z = self.layer10_10(z)
+		
+		return z
+
+	
+	def forward_branch(self, z):
+		
+		z = self.layerb11(z)
+		z = self.activation(z)
+		z = self.layerb12(z)
+		z = self.layerb13(z)
+		z = self.layerb14(z)
+		z = self.activation(z)
+		z = self.layerb15(z)
+		z = self.layerb16(z)
+		z = self.layerb_mid(z)
+		z = self.activation(z)
+		
+		return z
+		
+		
+	def __str__(self):
+		return "HCNN3_c4_b2_r"

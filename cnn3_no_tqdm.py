@@ -33,11 +33,11 @@ class CIFAR10():
 		self.training_size = 50000
 
 		#--- coarse 1 classes ---
-		self.labels_c_1 = ('transport', 'animal')
+		self.labels_c1 = ('transport', 'animal')
 		#--- coarse 2 classes ---
-		self.labels_c_2 = ('sky', 'water', 'road', 'bird', 'reptile', 'pet', 'medium')
+		self.labels_c2 = ('sky', 'water', 'road', 'bird', 'reptile', 'pet', 'medium')
 		#--- fine classes ---
-		self.labels_c_3 = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+		self.labels_c3 = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 			   
 		transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
@@ -45,11 +45,11 @@ class CIFAR10():
 
 		self.batch_size = 128
 
-		trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform, target_transform = coarser)
+		trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
 
 		self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
 
-		testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform, target_transform = coarser)
+		testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
 
 		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 
@@ -89,11 +89,24 @@ class CIFAR10():
 		
 	
 	def c2_reinforce(self, c1_logits, c2_reinforcer):
-		pass
+		num_rows = c1_logits.size(0)
+		c2_reinforcer[:num_rows,0] = c2_reinforcer[:num_rows,1] = c2_reinforcer[:num_rows,2] = c1_logits[:,0]
+		c2_reinforcer[:num_rows,3] = c2_reinforcer[:num_rows,4] = c2_reinforcer[:num_rows,5] = c2_reinforcer[:num_rows,6] = c1_logits[:,1]
+		
+		return c2_reinforcer[:num_rows,:]
 		
 	
 	def c3_reinforce(self, c2_logits, c3_reinforcer):
-		pass
+		num_rows = c2_logits.size(0)
+		c3_reinforcer[:num_rows,0] = c2_logits[:,0]
+		c3_reinforcer[:num_rows,8] = c2_logits[:,1]
+		c3_reinforcer[:num_rows,1] = c3_reinforcer[:num_rows,9] = c2_logits[:,2]
+		c3_reinforcer[:num_rows,2] = c2_logits[:,3]
+		c3_reinforcer[:num_rows,6] = c2_logits[:,4]
+		c3_reinforcer[:num_rows,3] = c3_reinforcer[:num_rows,5] = c2_logits[:,5]
+		c3_reinforcer[:num_rows,4] = c3_reinforcer[:num_rows,7] = c2_logits[:,6]
+		
+		return c3_reinforcer[:num_rows,:]
 		
 	
 	def __str__(self):
@@ -117,11 +130,11 @@ class CIFAR100():
 
 		self.batch_size = 128
 
-		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform, target_transform = coarser)
+		trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=False, transform=transform, target_transform = coarser)
 
 		self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_cores)
 
-		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform, target_transform = coarser)
+		testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=False, transform=transform, target_transform = coarser)
 
 		self.testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=num_cores)
 		
@@ -560,7 +573,7 @@ class CNN3(ABC, nn.Module):
 
 		self.optimizer.step()
 
-		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).mean(), torch.heaviside(self.ort3-1e-7, self.v).mean()])
+		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).sum(dim=1).mean(), torch.heaviside(self.ort3-1e-7, self.v).sum(dim=1).mean()]).clone().detach()
 		
 
 	def vect_to_scalar_loss(self, loss_vect):
@@ -598,7 +611,7 @@ class CNN3(ABC, nn.Module):
 		if back:
 			self.optimizer.step()
 		
-		return torch.tensor([loss_f_m, loss_i1_m, loss_i2_m]), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).mean(), torch.heaviside(self.ort3-1e-7, self.v).mean()]).clone().detach()
+		return torch.tensor([loss_f_m, loss_i1_m, loss_i2_m]), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).sum(dim=1).mean(), torch.heaviside(self.ort3-1e-7, self.v).sum(dim=1).mean()]).clone().detach()
 
 
 	def training_loop_body(self):			
