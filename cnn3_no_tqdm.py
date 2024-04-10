@@ -552,6 +552,7 @@ class CNN3(ABC, nn.Module):
 
 		return ort2, ort3, prj2, prj3
 
+
 	def compute_orthogonal(self, z, W, I_o, eps = 1e-8):
 		WWT = torch.matmul(W, W.mT)
 		P = solve_matrix_system(WWT + torch.randn_like(WWT, device = device) * eps, I_o) # Broadcasting
@@ -632,18 +633,19 @@ class CNN3(ABC, nn.Module):
 			loss_f.backward(retain_graph=True)
 			back = True
 			
-		if loss_i1_m.isnan() == False:
+		if loss_i1.isnan() == False:
 			loss_i1.backward(retain_graph=True)
 			back = True
 			
-		if loss_i2_m.isnan() == False:
+		if loss_i2.isnan() == False:
 			loss_i2.backward()
 			back = True
 
 		if back:
 			self.optimizer.step()
 		
-		return torch.tensor([loss_f, loss_i1, loss_i2]).clone().detach(), torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).sum(dim=1).mean(), torch.heaviside(self.ort3-1e-7, self.v).sum(dim=1).mean()]).clone().detach()
+		return torch.tensor([loss_f_vect.mean(), loss_i1_vect.mean(), loss_i2_vect.mean()]).clone().detach(), \
+					torch.tensor([torch.heaviside(self.ort2-1e-7, self.v).sum(dim=1).mean(), torch.heaviside(self.ort3-1e-7, self.v).sum(dim=1).mean()]).clone().detach()
 
 
 	def training_loop_body(self):			
@@ -674,15 +676,17 @@ class CNN3(ABC, nn.Module):
 				self.num_push += 1
 				running_loss = torch.zeros(self.dataset.class_levels)
 				running_l0 = torch.zeros(self.dataset.class_levels-1)
-				iter = 1
+				iter = 0
 
 			iter +=1
 
 	
 	def train_model(self, track = False, filename = ""):
-		self.I = torch.eye(self.layerb_mid.out_features, device = device)
-		self.I_o1 = torch.eye(self.layerb17.out_features, device = device)
-		self.I_o2 = torch.eye(self.layerb17.out_features + self.layerb27.out_features, device = device)
+		if not self.custom_training:
+			self.I = torch.eye(self.layerb_mid.out_features, device = device)
+			self.I_o1 = torch.eye(self.layerb17.out_features, device = device)
+			self.I_o2 = torch.eye(self.layerb17.out_features + self.layerb27.out_features, device = device)
+			
 		self.train()
 		training_f = self.training_loop_body
 		
@@ -999,9 +1003,9 @@ class CNN3(ABC, nn.Module):
 			msg += str(sp) + " "
 		msg += "\n\n"
 		msg += "Number of params: " + str(self.num_param()) + "\n\n"
+		msg += "Branch size: " +  str(self.branch_size) + "\n\n"
 		msg += "Loss threshold: " + str(self.threshold) + "\n\n"
 		msg += "Only thresholded: " + str(self.only_thresholded) + "\n\n"
-		msg += "Reduction: " + self.reduction + "\n\n"
 		msg += "Additional info: " + additional_info
 		
 		with open(filename+"_configuration.txt", 'w') as f:

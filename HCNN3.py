@@ -8,11 +8,13 @@ from cnn3 import np
 
 class HCNN3(CNN3):
 	
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded):
 		
 		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, only_thresholded)
 		
 		self.branch_size = branch_size
+		self.reinforce = reinforce
+		self.projection = projection
 		
 		self.layer1  = nn.Conv2d(3, 64, (3,3), padding = 'same', bias = False)
 		self.layer2  = nn.BatchNorm2d(64)
@@ -29,10 +31,25 @@ class HCNN3(CNN3):
 		self.layerb17 = nn.Linear(self.branch_size, self.dataset.num_c1)
 		
 		self.layerb27 = nn.Linear(self.branch_size, self.dataset.num_c2)
-		self.layerb27__ = nn.Linear(self.branch_size, self.dataset.num_c2)
 		
 		self.layerb37 = nn.Linear(self.branch_size, self.dataset.num_c3)
-		self.layerb37__ = nn.Linear(self.branch_size, self.dataset.num_c3)
+		
+		if self.projection:
+			self.layerb27__ = nn.Linear(self.branch_size, self.dataset.num_c2)
+			self.layerb37__ = nn.Linear(self.branch_size, self.dataset.num_c3)
+		
+		if self.reinforce and self.projection:
+			self.layer_branch_2_final = self.layer_branch_2_final_reduce_prj
+			self.layer_branch_3_final =	self.layer_branch_3_final_reduce_prj
+		elif self.reinforce:
+			self.layer_branch_2_final = self.layer_branch_2_final_reduce
+			self.layer_branch_3_final =	self.layer_branch_3_final_reduce
+		elif self.projection:
+			self.layer_branch_2_final = self.layer_branch_2_final_prj
+			self.layer_branch_3_final =	self.layer_branch_3_final_prj
+		else:
+			self.layer_branch_2_final = self.layer_branch_2_final_naive
+			self.layer_branch_3_final = self.layer_branch_3_final_naive
 	
 	
 	def forward_conv(self, x):
@@ -41,6 +58,30 @@ class HCNN3(CNN3):
 		
 	def forward_branch(self, x):
 		return x
+		
+		
+	def layer_branch_2_final_naive(self, ort, prj, b1):
+		return self.layerb27(ort) + self.layerb27__(prj)
+		
+		
+	def layer_branch_2_final_reduce_prj(self, ort, prj, b1):
+		return self.layerb27(ort) + self.layerb27__(prj) + self.c2_reinforce(b1.clone().detach())
+		
+	
+	def layer_branch_2_final_prj(self, ort, prj, b1):
+		return self.layerb27(ort) + self.c2_reinforce(b1.clone().detach())
+		
+		
+	def layer_branch_3_final_naive(self, ort, prj, b2):
+		return self.layerb37(ort) + self.layerb37__(prj)
+		
+		
+	def layer_branch_3_final_reduce_prj(self, ort, prj, b2):
+		return self.layerb37(ort) + self.layerb37__(prj) + self.c3_reinforce(b2.clone().detach())
+		
+		
+	def layer_branch_3_final_prj(self, ort, prj, b2):
+		return self.layerb37(ort) + self.c3_reinforce(b2.clone().detach())
 	
 		
 	def forward(self, x):
@@ -76,19 +117,20 @@ class HCNN3(CNN3):
 		b1 = self.layerb17(z)
 		
 		# branch 2
-		b2 = self.layerb27(ort2) + self.layerb27__(prj2) + self.c2_reinforce(b1.clone().detach())
+		b2 = self.layer_branch_2_final(ort2, prj2, b1)
 
 		# branch 3
-		b3 = self.layerb37(ort3) + self.layerb37__(prj3) + self.c3_reinforce(b2.clone().detach())
+		b3 = self.layer_branch_3_final(ort3, prj3, b2)
 
 		return b1, b2, b3
 		
 
-class HCNN3_c0_b0_r(HCNN3):
+class HCNN3_c0_b0(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 
 		self.layerb_mid = nn.Linear(8*8*128, self.branch_size)
 
@@ -105,15 +147,16 @@ class HCNN3_c0_b0_r(HCNN3):
 		
 		
 	def __str__(self):
-		return "HCNN3_c0_b0_r"
+		return "HCNN3_c0_b0"
 
 
 
-class HCNN3_c0_b1_r(HCNN3):
+class HCNN3_c0_b1(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 
 		self.layerb11 = nn.Linear(8*8*128, self.branch_size, bias = False)
 		self.layerb12 = nn.BatchNorm1d(self.branch_size)
@@ -138,15 +181,16 @@ class HCNN3_c0_b1_r(HCNN3):
 		
 
 	def __str__(self):
-		return "HCNN3_c0_b1_r"
+		return "HCNN3_c0_b1"
 		
 
 		
-class HCNN3_c0_b2_r(HCNN3):
+class HCNN3_c0_b2(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 
 		self.layerb11 = nn.Linear(8*8*128, self.branch_size, bias = False)
 		self.layerb12 = nn.BatchNorm1d(self.branch_size)
@@ -178,15 +222,16 @@ class HCNN3_c0_b2_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c0_b2_r"
+		return "HCNN3_c0_b2"
 		
 		
 		
-class HCNN3_c1_b0_r(HCNN3):
+class HCNN3_c1_b0(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -217,15 +262,16 @@ class HCNN3_c1_b0_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c1_b0_r"
+		return "HCNN3_c1_b0"
 		
 		
 
-class HCNN3_c1_b1_r(HCNN3):
+class HCNN3_c1_b1(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, 
+					epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -264,15 +310,16 @@ class HCNN3_c1_b1_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c1_b1_r"
+		return "HCNN3_c1_b1"
 		
 		
 		
-class HCNN3_c1_b2_r(HCNN3):
+class HCNN3_c1_b2(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -317,15 +364,16 @@ class HCNN3_c1_b2_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c1_b2_r"	
+		return "HCNN3_c1_b2"	
 
 
 
-class HCNN3_c2_b0_r(HCNN3):
+class HCNN3_c2_b0(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -361,15 +409,16 @@ class HCNN3_c2_b0_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c2_b0_r"	
+		return "HCNN3_c2_b0"	
 
 
 
-class HCNN3_c2_b1_r(HCNN3):
+class HCNN3_c2_b1(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -413,15 +462,16 @@ class HCNN3_c2_b1_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c2_b1_r"	
+		return "HCNN3_c2_b1"	
 	
 		
 		
-class HCNN3_c2_b2_r(HCNN3):
+class HCNN3_c2_b2(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -472,14 +522,15 @@ class HCNN3_c2_b2_r(HCNN3):
 		
 		
 	def __str__(self):
-		return "HCNN3_c2_b2_r"
+		return "HCNN3_c2_b2"
 		
 
-class HCNN3_c3_b0_r(HCNN3):
+class HCNN3_c3_b0(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -524,15 +575,16 @@ class HCNN3_c3_b0_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c3_b0_r"	
+		return "HCNN3_c3_b0"	
 
 
 
-class HCNN3_c3_b1_r(HCNN3):
+class HCNN3_c3_b1(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -585,15 +637,16 @@ class HCNN3_c3_b1_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c3_b1_r"	
+		return "HCNN3_c3_b1"	
 	
 		
 		
-class HCNN3_c3_b2_r(HCNN3):
+class HCNN3_c3_b2(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -653,14 +706,15 @@ class HCNN3_c3_b2_r(HCNN3):
 		
 		
 	def __str__(self):
-		return "HCNN3_c3_b2_r"
+		return "HCNN3_c3_b2"
 		
 		
-class HCNN3_c4_b0_r(HCNN3):
+class HCNN3_c4_b0(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -710,15 +764,16 @@ class HCNN3_c4_b0_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c4_b0_r"	
+		return "HCNN3_c4_b0"	
 
 
 
-class HCNN3_c4_b1_r(HCNN3):
+class HCNN3_c4_b1(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -776,15 +831,16 @@ class HCNN3_c4_b1_r(HCNN3):
 
 
 	def __str__(self):
-		return "HCNN3_c4_b1_r"	
+		return "HCNN3_c4_b1"	
 	
 		
 		
-class HCNN3_c4_b2_r(HCNN3):
+class HCNN3_c4_b2(HCNN3):
 
-	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, only_thresholded = False):
+	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
+					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
 
-		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, only_thresholded)
+		super().__init__(learning_rate, momentum, nesterov, dataset, epochs, every_print, switch_point, custom_training, threshold, reduction, branch_size, reinforce, projection, only_thresholded)
 		
 		self.layer10_1 = nn.Conv2d(128, 256, (3,3), padding = 'same', bias = False)
 		self.layer10_2 = nn.BatchNorm2d(256)
@@ -849,4 +905,4 @@ class HCNN3_c4_b2_r(HCNN3):
 		
 		
 	def __str__(self):
-		return "HCNN3_c4_b2_r"
+		return "HCNN3_c4_b2"

@@ -4,6 +4,8 @@ from cnn3 import torch, optim, nn, F
 from cnn3 import CIFAR100
 from cnn3 import np
 from cnn3 import device
+from cnn3 import tqdm
+import sys
 
 from telegramBot import Terminator
 
@@ -152,7 +154,7 @@ class BCNN3(CNN3):
 		return b1, b2, b3
 
 
-	def predict_and_learn(self, batch, labels):
+	def predict_and_learn_(self, batch, labels):
 		self.optimizer.zero_grad()
 		predict = self(batch)
 		
@@ -178,14 +180,14 @@ class BCNN3(CNN3):
 			batch = batch.to(device)
 			labels = labels.to(device)
 		
-			loss, loss_scalar = self.predict_and_learn(batch, labels)
+			loss, loss_scalar = self.predict_and_learn_(batch, labels)
 
 			running_loss += (loss - running_loss) / iter
 			running_loss_scalar += (loss_scalar - running_loss_scalar) / iter
 			
 			if iter & self.every_print == 0:
 				self.loss_track[self.num_push, :] = running_loss
-				self.loss_track_scalar[self.num_push, :] = running_loss_scalar
+				self.loss_track_scalar[self.num_push] = running_loss_scalar
 				self.accuracy_track[self.num_push, :] = self.test(mode = "train")
 				self.num_push += 1
 				running_loss = torch.zeros(self.dataset.class_levels)
@@ -197,45 +199,45 @@ class BCNN3(CNN3):
 
 	def custom_training_f(self, track = False, filename = ""):
 	
-		training_loop_f = training_loop_body
+		training_loop_f = self.training_loop_body
 		
 		if track:
-			training_loop_f = training_loop_body_track
+			training_loop_f = self.training_loop_body_track
 			self.loss_track_scalar = torch.zeros(self.epochs * self.track_size)
 
-		for epoch in np.arange(self.weights_switch_points[0]):				
-			self.loop_f()
+		for epoch in tqdm(np.arange(self.weights_switch_points[0]), desc = "Phase 1"):
+			training_loop_f()
 			
 		self.alpha = self.alphas[1]
 		self.beta = self.betas[1]
 		self.gamma = self.gammas[1]
 			
-		for epoch in np.arange(self.weights_switch_points[0], self.weights_switch_points[1]):
-			self.training_loop_f()
+		for epoch in tqdm(np.arange(self.weights_switch_points[0], self.weights_switch_points[1]), desc = "Phase 2"):
+			training_loop_f()
 			
 		self.alpha = self.alphas[2]
 		self.beta = self.betas[2]
 		self.gamma = self.gammas[2]
 
-		for epoch in np.arange(self.weights_switch_points[1], self.weights_switch_points[2]):
-			self.training_loop_f()
+		for epoch in tqdm(np.arange(self.weights_switch_points[1], self.weights_switch_points[2]), desc = "Phase 3"):
+			training_loop_f()
 		
 		self.alpha = self.alphas[3]
 		self.beta = self.betas[3]
 		self.gamma = self.gammas[3]
 		
-		for epoch in np.arange(self.weights_switch_points[2], self.lr_switch_points[0]):
-			self.training_loop_f()
+		for epoch in tqdm(np.arange(self.weights_switch_points[2], self.lr_switch_points[0]), desc = "Phase 4"):
+			training_loop_f()
 			
 		self.optimizer.param_groups[0]['lr'] = self.learning_rate[1]	
 			
-		for epoch in np.arange(self.lr_switch_points[0], self.lr_switch_points[1]):
-			self.training_loop_f()
+		for epoch in tqdm(np.arange(self.lr_switch_points[0], self.lr_switch_points[1]), desc = "Phase 5"):
+			training_loop_f()
 			
 		self.optimizer.param_groups[0]['lr'] = self.learning_rate[2]
 
-		for epoch in np.arange(self.lr_switch_points[1], self.epochs):
-			self.training_loop_f()
+		for epoch in tqdm(np.arange(self.lr_switch_points[1], self.epochs), desc = "Final phase"):
+			training_loop_f()
 		
 		if track:
 			self.plot_training_loss_scalar(filename + "_train_loss_scalar.pdf")
@@ -243,7 +245,7 @@ class BCNN3(CNN3):
 		
 	def plot_training_loss_scalar(self, filename):
 		plt.figure(figsize=(12, 6))
-		plt.plot(np.linspace(1, self.epochs, self.loss_track_scalar.size(0)), self.loss_track_scalar[:, 0].numpy())
+		plt.plot(np.linspace(1, self.epochs, self.loss_track_scalar.size(0)), self.loss_track_scalar.numpy())
 		plt.title("Weighted training loss")
 		plt.xlabel("Epochs")
 		plt.ylabel("Error")
@@ -256,25 +258,35 @@ if __name__ == '__main__':
 	alpha = [0.98, 0.1, 0.1, 0.]
 	beta = [0.01, 0.8, 0.2, 0.]
 	gamma = [0.01, 0.1, 0.7, 1.]
-	learning_rate = [1e-3, 2e-4, 5e-5]
 	momentum = 0.9
 	nesterov = True
-	epochs = 80
 	every_print = 32
 	batch_size = 128
-	weights_switch_points = [13, 23, 33]
-	lr_switch_points = [56, 71]
+	track = True
+	
+	if sys.argv[1] == "CIFAR100":
+		learning_rate = [1e-3, 2e-4, 5e-5]
+		epochs = 80
+		weights_switch_points = [13, 23, 33]
+		lr_switch_points = [56, 71]
+	elif sys.argv[1] == "CIFAR10":
+		learning_rate = [3e-3, 5e-4, 1e-4]
+		epochs = 60
+		weights_switch_points = [10, 20, 30]
+		lr_switch_points = [43, 53]
+	else:
+		raise ValueError(f'Dataset {sys.argv[1]} is not supported yet.')
 	
 	bot = Terminator()
 	dataset = CIFAR100(batch_size)
-	cnn = BCNN3(alpha, beta, gamma, weights_switch_points, learning_rate, lr_switch_point, momentum, nesterov, dataset, epochs, every_print)
+	cnn = BCNN3(alpha, beta, gamma, weights_switch_points, learning_rate, lr_switch_points, momentum, nesterov, dataset, epochs, every_print)
 	cnn.to(device)
 	
 	err = False
-	filename = "models/CIFAR100/B-CNN3"
+	filename = "models/" + str(dataset) + "/B-CNN3"
 
 	try:
-		cnn.train_track(filename)
+		cnn.train_model(track, filename)
 		cnn.save_model(filename)
 		msg = cnn.test(mode = "write", filename = filename)
 		
