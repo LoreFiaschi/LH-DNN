@@ -13,7 +13,7 @@ import sys
 
 class Configuration:
 	
-	def __init__(self, learning_rate, epochs, switch_points, batch_size, momentum, nesterov, 
+	def __init__(self, learning_rate, epochs, switch_points, momentum, nesterov, 
 					every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded):
 		
 		self.learning_rate = learning_rate
@@ -27,10 +27,9 @@ class Configuration:
 		self.reduction = reduction
 		self.track = track
 		self.dataset = dataset
-		self.batch_size = batch_size
 		self.models = list_of_models
 		self.branch_size = branch_size
-		self.reinforce = reiforce
+		self.reinforce = reinforce
 		self.projection = projection
 		self.only_thresholded = only_thresholded
 		
@@ -50,8 +49,8 @@ class Configuration:
 		msg += "Loss threshold: " + str(self.threshold) + "\n"
 		msg += "Only thresholded: " + str(self.only_thresholded) + "\n"
 		msg += "Reduction: " + self.reduction + "\n"
-		msg += "Reinforce: " + self.reinforce + "\n"
-		msg += "Projection: " + self.projection
+		msg += "Reinforce: " + str(self.reinforce) + "\n"
+		msg += "Projection: " + str(self.projection)
 		
 		return msg
 
@@ -74,10 +73,9 @@ class Tester():
 			for num in tqdm(range(num_conf), desc = "Testing configuration"):
 			
 				conf = self.list_of_conf[num]
-				dataset = conf.dataset(conf.batch_size)
 				
 				for model in conf.models:
-					cnn = model(conf.learning_rate, conf.momentum, conf.nesterov, dataset, 
+					cnn = model(conf.learning_rate, conf.momentum, conf.nesterov, conf.dataset, 
 							conf.epochs, conf.every_print, conf.switch_points, conf.custom_training, conf.threshold, conf.reduction, conf.branch_size, conf.reinforce, conf.projection, conf.only_thresholded)
 							
 					
@@ -90,7 +88,7 @@ class Tester():
 					cnn.save_model(filename)
 					msg = cnn.test(mode = "write", filename = filename)
 					
-					addtional_info = ""
+					additional_info = ""
 					if conf.reinforce:
 						additional_info += "reinforce\t"
 					if conf.projection:
@@ -133,27 +131,29 @@ if __name__ == '__main__':
 	batch_size = 128
 	track = True
 	custom_training = False
-	threshold = 0.6
-	reduction = 'none'
 	momentum = 0.9
 	nesterov = True
 	every_print = 32
 	reinforce = True
 	projection = False
-	list_of_models = [HCNN3_c0_b0, HCNN3_c0_b1, HCNN3_c0_b2,
-						#HCNN3_c1_b0, HCNN3_c1_b1, HCNN3_c1_b2,
-						HCNN3_c2_b0, HCNN3_c2_b1, HCNN3_c2_b2,
-						#HCNN3_c3_b0, HCNN3_c3_b1, HCNN3_c3_b2,
-						HCNN3_c4_b0, HCNN3_c4_b1, HCNN3_c4_b2]
+
+	c0_models = [HCNN3_c0_b0, HCNN3_c0_b1, HCNN3_c0_b2]
+	#c1_models = [HCNN3_c1_b0, HCNN3_c1_b1, HCNN3_c1_b2]
+	c2_models = [HCNN3_c2_b0, HCNN3_c2_b1, HCNN3_c2_b2]
+	#c3_models = [HCNN3_c3_b0, HCNN3_c3_b1, HCNN3_c3_b2]
+	c4_models = [HCNN3_c4_b0, HCNN3_c4_b1, HCNN3_c4_b2]
+	
 	list_of_conf = []
 	
 	if sys.argv[1] == "CIFAR100":
 
-		dataset = CIFAR100
+		dataset = CIFAR100(batch_size)
 		lr2 = [1e-3, 2e-4]
 		lr3 = [1e-3, 2e-4, 5e-5]
-		branch_size_list = [512, 1024]
+		branch_size_list = [512]
 		only_thresholded = False
+		threshold = 0.6
+		reduction = 'none'
 		
 		for i in range(1):
 			for branch_size in branch_size_list:
@@ -166,37 +166,38 @@ if __name__ == '__main__':
 				list_of_conf.append(Configuration(lr3, 15, [11, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
 				list_of_conf.append(Configuration(lr3, 20, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
 				
-		only_thresholded = True	
+			only_thresholded = True	
 	
 	elif sys.argv[1] == "CIFAR10":
 	
-		dataset = CIFAR10
+		dataset = CIFAR10(batch_size)
 		lr = [3e-3, 5e-4]
-		#branch_size_list = [128, 256, 512]
-		branch_size_list = [256, 512]
-		only_thresholded = True
+		only_thresholded = False
+		c12_models = c0_models+c2_models
 		
-		for branch_size in branch_size_list:
-			list_of_conf.append(Configuration(lr, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-			list_of_conf.append(Configuration(lr, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-			list_of_conf.append(Configuration(lr, 11, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-			list_of_conf.append(Configuration(lr, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-			list_of_conf.append(Configuration(lr, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-			list_of_conf.append(Configuration(lr, 20, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-			list_of_conf.append(Configuration(lr, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-	
+		list_of_conf.append(Configuration(lr,  9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr,  9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c4_models, 512, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 11, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 11, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c4_models, 512, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 15, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 15, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c4_models, 512, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 20, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 20, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c4_models, 512, reinforce, projection, only_thresholded))
+		
 	elif sys.argv[1] == "prova":
-		dataset = CIFAR100
-		lr = [1e-3, 2e-4]
-		#dataset = CIFAR10
-		#lr = [3e-3, 5e-4]
-		branch_size = 512
-		only_thresholded = True
+		#dataset = CIFAR100
+		#lr = [1e-3, 2e-4]
+		dataset = CIFAR10(batch_size)
+		lr = [3e-3, 5e-4]
+		branch_size = 256
+		threshold = 0.0
+		only_thresholded = False
+		reduction = 'mean'
 		
 		#list_of_models = [HCNN3_c0_b2, HCNN3_c1_b2, HCNN3_c2_b2, HCNN3_c3_b2, HCNN3_c4_b2]
-		list_of_models = [HCNN3_c4_b2]
+		list_of_models = [HCNN3_c0_b2]
 		
-		list_of_conf.append(Configuration(lr, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 20, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
 		
 	else:
 		raise ValueError(f'Test for {sys.argv[1]} is not supported yet.')
@@ -207,4 +208,4 @@ if __name__ == '__main__':
 	
 	t.launch()
 	
-	t.write_legend("models/" + str(dataset(128)) + "/configurations_legend.txt")
+	t.write_legend("models/" + str(dataset) + "/configurations_legend.txt")

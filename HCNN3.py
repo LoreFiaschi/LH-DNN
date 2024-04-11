@@ -39,11 +39,11 @@ class HCNN3(CNN3):
 			self.layerb37__ = nn.Linear(self.branch_size, self.dataset.num_c3)
 		
 		if self.reinforce and self.projection:
-			self.layer_branch_2_final = self.layer_branch_2_final_reduce_prj
-			self.layer_branch_3_final =	self.layer_branch_3_final_reduce_prj
+			self.layer_branch_2_final = self.layer_branch_2_final_reinforce_prj
+			self.layer_branch_3_final =	self.layer_branch_3_final_reinforce_prj
 		elif self.reinforce:
-			self.layer_branch_2_final = self.layer_branch_2_final_reduce
-			self.layer_branch_3_final =	self.layer_branch_3_final_reduce
+			self.layer_branch_2_final = self.layer_branch_2_final_reinforce
+			self.layer_branch_3_final =	self.layer_branch_3_final_reinforce
 		elif self.projection:
 			self.layer_branch_2_final = self.layer_branch_2_final_prj
 			self.layer_branch_3_final =	self.layer_branch_3_final_prj
@@ -64,11 +64,15 @@ class HCNN3(CNN3):
 		return self.layerb27(ort) + self.layerb27__(prj)
 		
 		
-	def layer_branch_2_final_reduce_prj(self, ort, prj, b1):
+	def layer_branch_2_final_reinforce_prj(self, ort, prj, b1):
 		return self.layerb27(ort) + self.layerb27__(prj) + self.c2_reinforce(b1.clone().detach())
 		
-	
+		
 	def layer_branch_2_final_prj(self, ort, prj, b1):
+		return self.layerb27(ort) + self.layerb27__(prj)
+		
+	
+	def layer_branch_2_final_reinforce(self, ort, prj, b1):
 		return self.layerb27(ort) + self.c2_reinforce(b1.clone().detach())
 		
 		
@@ -76,11 +80,15 @@ class HCNN3(CNN3):
 		return self.layerb37(ort) + self.layerb37__(prj)
 		
 		
-	def layer_branch_3_final_reduce_prj(self, ort, prj, b2):
+	def layer_branch_3_final_reinforce_prj(self, ort, prj, b2):
 		return self.layerb37(ort) + self.layerb37__(prj) + self.c3_reinforce(b2.clone().detach())
 		
 		
 	def layer_branch_3_final_prj(self, ort, prj, b2):
+		return self.layerb37(ort) + self.layerb37__(prj)
+		
+		
+	def layer_branch_3_final_reinforce(self, ort, prj, b2):
 		return self.layerb37(ort) + self.c3_reinforce(b2.clone().detach())
 	
 		

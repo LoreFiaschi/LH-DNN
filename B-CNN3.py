@@ -1,10 +1,11 @@
 import cnn3
 from cnn3 import CNN3
 from cnn3 import torch, optim, nn, F
-from cnn3 import CIFAR100
+from cnn3 import CIFAR100, CIFAR10
 from cnn3 import np
 from cnn3 import device
 from cnn3 import tqdm
+from cnn3 import plt
 import sys
 
 from telegramBot import Terminator
@@ -236,7 +237,7 @@ class BCNN3(CNN3):
 			
 		self.optimizer.param_groups[0]['lr'] = self.learning_rate[2]
 
-		for epoch in tqdm(np.arange(self.lr_switch_points[1], self.epochs), desc = "Final phase"):
+		for epoch in tqdm(np.arange(self.lr_switch_points[1], self.epochs), desc = "Phase 6"):
 			training_loop_f()
 		
 		if track:
@@ -269,16 +270,17 @@ if __name__ == '__main__':
 		epochs = 80
 		weights_switch_points = [13, 23, 33]
 		lr_switch_points = [56, 71]
+		dataset = CIFAR100(batch_size)
 	elif sys.argv[1] == "CIFAR10":
 		learning_rate = [3e-3, 5e-4, 1e-4]
 		epochs = 60
 		weights_switch_points = [10, 20, 30]
 		lr_switch_points = [43, 53]
+		dataset = CIFAR10(batch_size)
 	else:
 		raise ValueError(f'Dataset {sys.argv[1]} is not supported yet.')
 	
 	bot = Terminator()
-	dataset = CIFAR100(batch_size)
 	cnn = BCNN3(alpha, beta, gamma, weights_switch_points, learning_rate, lr_switch_points, momentum, nesterov, dataset, epochs, every_print)
 	cnn.to(device)
 	
