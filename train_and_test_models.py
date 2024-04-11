@@ -65,9 +65,10 @@ class Tester():
 	
 	def launch(self):
 	
+		resume = ""
+	
 		try:
-		
-			resume = ""
+			
 			num_conf = len(self.list_of_conf)
 			
 			for num in tqdm(range(num_conf), desc = "Testing configuration"):
@@ -108,7 +109,7 @@ class Tester():
 			self.bot.sendMessage("Programma NON terminato correttamente\nTipo di errore: " + error.__class__.__name__ + "\nMessaggio: " + str(error))
 			raise error
 			
-		self.bot.sendMessage("Test completato correttamente")
+		self.bot.sendMessage("Test completato correttamente:\n\n" + resume)
 		
 		
 	def write_legend(self, filename):
@@ -173,6 +174,8 @@ if __name__ == '__main__':
 		dataset = CIFAR10(batch_size)
 		lr = [3e-3, 5e-4]
 		only_thresholded = False
+		threshold = 0.0
+		reduction = 'mean'
 		c12_models = c0_models+c2_models
 		
 		list_of_conf.append(Configuration(lr,  9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
