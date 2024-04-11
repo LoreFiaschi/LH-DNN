@@ -99,7 +99,7 @@ class Tester():
 					resume += msg + '\n\n'
 					
 			
-			resume_filename = "models/" + str(dataset) + "/" + "test_resume.txt"
+			resume_filename = "models/" + str(conf.dataset) + "/" + "test_resume.txt"
 					
 			with open(resume_filename, 'w') as f:
 				f.write(resume)
