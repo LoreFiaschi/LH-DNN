@@ -79,7 +79,7 @@ class Tester():
 							conf.epochs, conf.every_print, conf.switch_points, conf.custom_training, conf.threshold, conf.reduction, conf.branch_size, conf.reinforce, conf.projection, conf.only_thresholded)
 							
 					
-					filename = "models/" + str(dataset) + "/" + str(cnn) + "_conf_" + str(num)
+					filename = "models/" + str(conf.dataset) + "/" + str(cnn) + "_conf_" + str(num)
 					resume += '\t' + str(cnn) + "_conf_" + str(num) + '\n'
 					
 					cnn.to(device)
