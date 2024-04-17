@@ -555,7 +555,8 @@ class CNN3(ABC, nn.Module):
 
 	def compute_orthogonal(self, z, W, I_o, eps = 1e-8):
 		WWT = torch.matmul(W, W.mT)
-		P = solve_matrix_system(WWT + torch.randn_like(WWT, device = device) * eps, I_o) # Broadcasting
+		#P = solve_matrix_system(WWT + torch.randn_like(WWT, device = device) * eps, I_o) # Broadcasting
+		P = solve_matrix_system(WWT, I_o) # Broadcasting
 		P = torch.matmul(P, W)
 		P = self.I - torch.matmul(W.mT, P) # Broadcasting
 		
@@ -788,6 +789,7 @@ class CNN3(ABC, nn.Module):
 
 
 	def test_results_to_text(self):
+		str_bot_short = ""
 		str_bot = ""
 		str = ""
 		
@@ -819,18 +821,27 @@ class CNN3(ABC, nn.Module):
 
 		str_bot += f'Accuracy on c1: {(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
 		str_bot += '\n'
+		
+		#str_bot_short += f'{(100 * self.correct_c1_pred.sum() / self.total_c1_pred.sum()):.2f} %'
+		#str_bot_short += '  '
 
 		str += f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
 		str += '\n'
 
 		str_bot += f'Accuracy on c2: {(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
 		str_bot += '\n'
+		
+		#str_bot_short += f'{(100 * self.correct_c2_pred.sum() / self.total_c2_pred.sum()):.2f} %'
+		#str_bot_short += '  '
 
 		str += f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
 		str += '\n'
 
 		str_bot += f'Accuracy on c3: {(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
 		str_bot += '\n'
+		
+		str_bot_short += f'{(100 * self.correct_c3_pred.sum() / self.total_c3_pred.sum()):.2f} %'
+		#str_bot_short += '\n'
 
 		str += '\n'
 		str_bot += '\n'
@@ -849,6 +860,13 @@ class CNN3(ABC, nn.Module):
 		str_bot += '\n'
 		str_bot += f'Cross-accuracy c1 vs c3: {100 * float(self.correct_c1_vs_c3_pred.sum()) / self.total_c1_vs_c3_pred.sum():.2f} %'
 		str_bot += '\n'
+		
+		#str_bot_short += f'{100 * float(self.correct_c1_vs_c2_pred.sum()) / self.total_c1_vs_c2_pred.sum():.2f} %'
+		#str_bot_short += '  '
+		#str_bot_short += f'{100 * float(self.correct_c2_vs_c3_pred.sum()) / self.total_c2_vs_c3_pred.sum():.2f} %'
+		#str_bot_short += '  '
+		#str_bot_short += f'{100 * float(self.correct_c1_vs_c3_pred.sum()) / self.total_c1_vs_c3_pred.sum():.2f} %'
+		#str_bot_short += '  '
 
 		# cross classes accuracy (tree)
 		for i in np.arange(self.dataset.num_c1):
@@ -871,7 +889,7 @@ class CNN3(ABC, nn.Module):
 			str += '\n'
 			
 
-		return str, str_bot
+		return str, str_bot, str_bot_short
 		
 
 	def barplot(self, x, accuracy, labels, title):
@@ -918,10 +936,10 @@ class CNN3(ABC, nn.Module):
 				return msg_bot
 
 			case "write":
-				msg, msg_bot = self.test_results_to_text()
+				msg, msg_bot, msg_bot_short = self.test_results_to_text()
 				with open(filename+"_test_performance.txt", 'w') as f:
 					f.write(msg)
-				return msg_bot
+				return msg_bot, msg_bot_short
 
 			case "train":
 				accuracy_c1 = self.correct_c1_pred.sum() / self.total_c1_pred.sum()

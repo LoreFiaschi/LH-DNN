@@ -66,6 +66,7 @@ class Tester():
 	def launch(self):
 	
 		resume = ""
+		resume_short = ""
 	
 		try:
 			
@@ -82,12 +83,13 @@ class Tester():
 					
 					filename = "models/" + str(conf.dataset) + "/" + str(cnn) + "_conf_" + str(num)
 					resume += '\t' + str(cnn) + "_conf_" + str(num) + '\n'
+					resume_short += str(cnn) + "_conf_" + str(num) + ': '
 					
 					cnn.to(device)
 					
 					cnn.train_model(conf.track, filename)
 					cnn.save_model(filename)
-					msg = cnn.test(mode = "write", filename = filename)
+					msg, msg_short = cnn.test(mode = "write", filename = filename)
 					
 					additional_info = ""
 					if conf.reinforce:
@@ -98,6 +100,7 @@ class Tester():
 					cnn.write_configuration(filename, additional_info + "\n\n" + msg)
 					
 					resume += msg + '\n\n'
+					resume_short += msg_short + '\n'
 					
 			
 			resume_filename = "models/" + str(conf.dataset) + "/" + "test_resume.txt"
@@ -109,7 +112,8 @@ class Tester():
 			self.bot.sendMessage("Programma NON terminato correttamente\nTipo di errore: " + error.__class__.__name__ + "\nMessaggio: " + str(error))
 			raise error
 			
-		self.bot.sendMessage("Test completato correttamente:\n\n" + resume)
+		self.bot.sendMessage("Test completato correttamente")
+		self.bot.sendMessage(resume_short)
 		
 		
 	def write_legend(self, filename):
@@ -144,6 +148,10 @@ if __name__ == '__main__':
 	#c3_models = [HCNN3_c3_b0, HCNN3_c3_b1, HCNN3_c3_b2]
 	c4_models = [HCNN3_c4_b0, HCNN3_c4_b1, HCNN3_c4_b2]
 	
+	b0_models = [HCNN3_c0_b0, HCNN3_c1_b0, HCNN3_c2_b0, HCNN3_c3_b0, HCNN3_c4_b0]
+	b1_models = [HCNN3_c0_b1, HCNN3_c1_b1, HCNN3_c2_b1, HCNN3_c3_b1, HCNN3_c4_b1]
+	b2_models = [HCNN3_c0_b2, HCNN3_c1_b2, HCNN3_c2_b2, HCNN3_c3_b2, HCNN3_c4_b2]
+	
 	list_of_conf = []
 	
 	if sys.argv[1] == "CIFAR100":
@@ -151,40 +159,37 @@ if __name__ == '__main__':
 		dataset = CIFAR100(batch_size)
 		lr2 = [1e-3, 2e-4]
 		lr3 = [1e-3, 2e-4, 5e-5]
-		branch_size_list = [512]
 		only_thresholded = False
-		threshold = 0.6
-		reduction = 'none'
-		
-		for i in range(1):
-			for branch_size in branch_size_list:
-				list_of_conf.append(Configuration(lr2, 9, [5], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-				list_of_conf.append(Configuration(lr2, 11, [7], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-				#list_of_conf.append(Configuration(lr2, 15, [9], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-				list_of_conf.append(Configuration(lr2, 15, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-				list_of_conf.append(Configuration(lr2, 20, [11], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-				#list_of_conf.append(Configuration(lr3, 15, [9, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-				list_of_conf.append(Configuration(lr3, 15, [11, 13], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-				list_of_conf.append(Configuration(lr3, 20, [11, 14], batch_size, momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-				
-			only_thresholded = True	
-	
+		threshold = 0.0
+		reduction = 'mean'
+		list_of_models = c0_models + c2_models + c4_models
+		branch_size = 1024
+
+		list_of_conf.append(Configuration(lr2, 9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr2, 11, [7], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		#list_of_conf.append(Configuration(lr2, 15, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr2, 15, [11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr2, 20, [11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		#list_of_conf.append(Configuration(lr3, 15, [9, 11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		#list_of_conf.append(Configuration(lr3, 15, [11, 13], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		#list_of_conf.append(Configuration(lr3, 20, [11, 14], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+
 	elif sys.argv[1] == "CIFAR10":
 	
 		dataset = CIFAR10(batch_size)
 		lr = [3e-3, 5e-4]
 		only_thresholded = False
-		threshold = 0.0
-		reduction = 'mean'
-		c12_models = c0_models+c2_models
+		threshold = 0.6
+		reduction = 'none'
+		c02_b12_models = [b1_models[0], b1_models[2], b2_models[0], b2_models[2]]
 		
-		list_of_conf.append(Configuration(lr,  9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr,  9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c02_b12_models, 256, reinforce, projection, only_thresholded))
 		list_of_conf.append(Configuration(lr,  9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c4_models, 512, reinforce, projection, only_thresholded))
-		list_of_conf.append(Configuration(lr, 11, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 11, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c02_b12_models, 256, reinforce, projection, only_thresholded))
 		list_of_conf.append(Configuration(lr, 11, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c4_models, 512, reinforce, projection, only_thresholded))
-		list_of_conf.append(Configuration(lr, 15, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 15, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c02_b12_models, 256, reinforce, projection, only_thresholded))
 		list_of_conf.append(Configuration(lr, 15, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c4_models, 512, reinforce, projection, only_thresholded))
-		list_of_conf.append(Configuration(lr, 20, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c12_models, 256, reinforce, projection, only_thresholded))
+		list_of_conf.append(Configuration(lr, 20, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c02_b12_models, 256, reinforce, projection, only_thresholded))
 		list_of_conf.append(Configuration(lr, 20, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, c4_models, 512, reinforce, projection, only_thresholded))
 		
 	elif sys.argv[1] == "prova":
