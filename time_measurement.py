@@ -11,7 +11,7 @@ form timeit import default_timer as timer
 class Configuration:
 	
 	def __init__(self, learning_rate, epochs, switch_points, momentum, nesterov, 
-					every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded):
+					every_print, custom_training, threshold, reduction, track, dataset, model, branch_size, reinforce, projection, only_thresholded):
 		
 		self.learning_rate = learning_rate
 		self.momentum = momentum
@@ -24,7 +24,7 @@ class Configuration:
 		self.reduction = reduction
 		self.track = track
 		self.dataset = dataset
-		self.models = list_of_models
+		self.model = model
 		self.branch_size = branch_size
 		self.reinforce = reinforce
 		self.projection = projection
@@ -125,6 +125,7 @@ if __name__ == '__main__':
 	only_thresholded = False
 	threshold = 0.0
 	reduction = 'mean'
+	model = HCNN3_c4_b0
 
 	if sys.argv[1] == "CIFAR100":
 		# variable params
@@ -132,7 +133,7 @@ if __name__ == '__main__':
 		lr = [1e-3, 2e-4]
 		branch_size = 512
 
-		conf = Configuration(lr, 15, [11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded)
+		conf = Configuration(lr, 15, [11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, model, branch_size, reinforce, projection, only_thresholded)
 		
 
 	elif sys.argv[1] == "CIFAR10":
@@ -141,7 +142,7 @@ if __name__ == '__main__':
 		lr = [3e-3, 5e-4]
 		branch_size = 256
 
-		conf = Configuration(lr, 20, [11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded)
+		conf = Configuration(lr, 20, [11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, model, branch_size, reinforce, projection, only_thresholded)
 		
 
 	else:
