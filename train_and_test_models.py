@@ -142,11 +142,11 @@ if __name__ == '__main__':
 	reinforce = True
 	projection = False
 
-	c0_models = [HCNN3_c0_b0, HCNN3_c0_b1, HCNN3_c0_b2]
+	#c0_models = [HCNN3_c0_b0, HCNN3_c0_b1, HCNN3_c0_b2]
 	#c1_models = [HCNN3_c1_b0, HCNN3_c1_b1, HCNN3_c1_b2]
-	c2_models = [HCNN3_c2_b0, HCNN3_c2_b1, HCNN3_c2_b2]
+	#c2_models = [HCNN3_c2_b0, HCNN3_c2_b1, HCNN3_c2_b2]
 	#c3_models = [HCNN3_c3_b0, HCNN3_c3_b1, HCNN3_c3_b2]
-	c4_models = [HCNN3_c4_b0, HCNN3_c4_b1, HCNN3_c4_b2]
+	#c4_models = [HCNN3_c4_b0, HCNN3_c4_b1, HCNN3_c4_b2]
 	
 	b0_models = [HCNN3_c0_b0, HCNN3_c1_b0, HCNN3_c2_b0, HCNN3_c3_b0, HCNN3_c4_b0]
 	b1_models = [HCNN3_c0_b1, HCNN3_c1_b1, HCNN3_c2_b1, HCNN3_c3_b1, HCNN3_c4_b1]
@@ -162,11 +162,12 @@ if __name__ == '__main__':
 		only_thresholded = False
 		threshold = 0.0
 		reduction = 'mean'
-		list_of_models = c0_models + c2_models + c4_models
-		branch_size = 1024
+		#list_of_models = c0_models + c2_models + c4_models
+		list_of_models = [HCNN3_c2_b0] + [HCNN3_c4_b0]
+		branch_size = 512
 
-		list_of_conf.append(Configuration(lr2, 9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
-		list_of_conf.append(Configuration(lr2, 11, [7], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		#list_of_conf.append(Configuration(lr2, 9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
+		#list_of_conf.append(Configuration(lr2, 11, [7], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
 		#list_of_conf.append(Configuration(lr2, 15, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
 		list_of_conf.append(Configuration(lr2, 15, [11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))
 		list_of_conf.append(Configuration(lr2, 20, [11], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, list_of_models, branch_size, reinforce, projection, only_thresholded))

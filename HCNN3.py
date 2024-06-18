@@ -61,7 +61,7 @@ class HCNN3(CNN3):
 		
 		
 	def layer_branch_2_final_naive(self, ort, prj, b1):
-		return self.layerb27(ort) + self.layerb27__(prj)
+		return self.layerb27(ort + prj)
 		
 		
 	def layer_branch_2_final_reinforce_prj(self, ort, prj, b1):
@@ -73,11 +73,11 @@ class HCNN3(CNN3):
 		
 	
 	def layer_branch_2_final_reinforce(self, ort, prj, b1):
-		return self.layerb27(ort) + self.c2_reinforce(b1.clone().detach())
+		return self.layerb27(ort + prj) + self.c2_reinforce(b1.clone().detach())
 		
 		
 	def layer_branch_3_final_naive(self, ort, prj, b2):
-		return self.layerb37(ort) + self.layerb37__(prj)
+		return self.layerb37(ort + prj)
 		
 		
 	def layer_branch_3_final_reinforce_prj(self, ort, prj, b2):
@@ -89,7 +89,7 @@ class HCNN3(CNN3):
 		
 		
 	def layer_branch_3_final_reinforce(self, ort, prj, b2):
-		return self.layerb37(ort) + self.c3_reinforce(b2.clone().detach())
+		return self.layerb37(ort + prj) + self.c3_reinforce(b2.clone().detach())
 	
 		
 	def forward(self, x):
