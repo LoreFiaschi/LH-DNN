@@ -5,7 +5,7 @@ from HCNN3 import HCNN3_c4_b0
 from cnn3 import CIFAR100, CIFAR10
 from cnn3 import device
 import sys
-form timeit import default_timer as timer
+from timeit import default_timer as timer
 
 
 class Configuration:
@@ -62,19 +62,20 @@ class Tester():
 	
 	def launch(self):
 	
-		resume = ""
-		resume_short = ""
-	
 		try:
 
 			cnn = self.conf.model(self.conf.learning_rate, self.conf.momentum, self.conf.nesterov, self.conf.dataset, 
-					self.conf.epochs, self.conf.every_print, self.conf.switch_points, self.conf.custom_training, self.conf.threshold, 
+					2, self.conf.every_print, self.conf.switch_points, self.conf.custom_training, self.conf.threshold, 
 					self.conf.reduction, self.conf.branch_size, self.conf.reinforce, self.conf.projection, self.conf.only_thresholded)
 					
 			
 			filename = "models/" + str(conf.dataset) + "/" + str(cnn) + "_time"
 			
 			cnn.to(device)
+
+			cnn.train_model(False)
+
+			cnn.epochs = self.conf.epochs - 2
 			
 			start = timer()
 
@@ -104,7 +105,7 @@ class Tester():
 			raise error
 			
 		self.bot.sendMessage("Test completato correttamente")
-		self.bot.sendMessage("Tempo impiegato: " + str(time_spent) + "\n\n" + "Tempo impiegato per epoca: " + str(time_spent_per_epoch) + "\n\n" + "Tempo impiegato per batch: " + str(time_spent))
+		self.bot.sendMessage("Tempo impiegato: " + str(time_spent) + "\n\n" + "Tempo impiegato per epoca: " + str(time_spent_per_epoch) + "\n\n" + "Tempo impiegato per batch: " + str(time_spent_per_batch))
 
 
 if __name__ == '__main__':

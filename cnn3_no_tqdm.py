@@ -1051,8 +1051,8 @@ class CNN3(ABC, nn.Module):
 
 
 	def c2_reinforce(self, c1_logits):
-		return self.dataset.c2_reinforce(c1_logits, self.c2_reinforcer)
+		return self.dataset.c2_reinforce(c1_logits - torch.max(c1_logits), self.c2_reinforcer)
 		
 
 	def c3_reinforce(self, c2_logits):
-		return self.dataset.c3_reinforce(c2_logits, self.c3_reinforcer)
+		return self.dataset.c3_reinforce(c2_logits - torch.max(c2_logits), self.c3_reinforcer)
