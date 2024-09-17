@@ -27,7 +27,7 @@ class BVGG(CNN3):
 
 
 		# Block 1
-		self.layer1  = nn.Conv2d(3, 64, (3,3), padding = 'same')
+		self.layer1  = nn.Conv2d(1, 64, (3,3), padding = 'same')
 		self.layer2  = nn.BatchNorm2d(64)
 		self.layer3  = nn.Conv2d(64, 64, (3,3), padding = 'same')
 		self.layer4  = nn.BatchNorm2d(64)
@@ -43,7 +43,7 @@ class BVGG(CNN3):
 
 
 		# Coarse 1
-		self.layerb11 = nn.Linear(56*56*128, 256)
+		self.layerb11 = nn.Linear(7*7*128, 256)
 		self.layerb12 = nn.BatchNorm1d(256)
 		self.layerb13 = nn.Dropout(0.5)
 		self.layerb14 = nn.Linear(256, 256)
@@ -53,7 +53,7 @@ class BVGG(CNN3):
 		
 		
 		# Coarse 2
-		self.layerb21 = nn.Linear(28*28*256, 1024)
+		self.layerb21 = nn.Linear(3*3*256, 1024)
 		self.layerb22 = nn.BatchNorm1d(1024)
 		self.layerb23 = nn.Dropout(0.5)
 		self.layerb24 = nn.Linear(1024, 1024)
@@ -63,7 +63,7 @@ class BVGG(CNN3):
 
 		
 		# Coarse 3
-		self.layerb31 = nn.Linear(14*14*512, 4096)
+		self.layerb31 = nn.Linear(1*1*512, 4096)
 		self.layerb32 = nn.BatchNorm1d(4096)
 		self.layerb33 = nn.Dropout(0.5)
 		self.layerb34 = nn.Linear(4096, 4096)
@@ -301,18 +301,18 @@ class BVGG19(BVGG):
 
 
 		# block 5
-		z = self.layer28(z)
-		z = self.activation(z)
 		z = self.layer29(z)
+		z = self.activation(z)
 		z = self.layer30(z)
-		z = self.activation(z)
 		z = self.layer31(z)
+		z = self.activation(z)
 		z = self.layer32(z)
-		z = self.activation(z)
 		z = self.layer33(z)
-		z = self.layer34(z)
 		z = self.activation(z)
+		z = self.layer34(z)
 		z = self.layer35(z)
+		z = self.activation(z)
+		z = self.layer36(z)
 
 		# branch 3
 		b3 = torch.flatten(z, start_dim = 1)
