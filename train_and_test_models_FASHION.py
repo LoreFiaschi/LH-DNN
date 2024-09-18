@@ -145,9 +145,9 @@ if __name__ == '__main__':
 	list_of_conf = []
 	
 	if sys.argv[1] == "16":
-		b0_models = 			[HVGG_c1_b0_16, HVGG_c2_b0_16, HVGG_c3_b0_16]
-		b1_models = [HVGG_c0_b1, HVGG_c1_b1_16, HVGG_c2_b1_16, HVGG_c3_b1_16]
-		b2_models = [HVGG_c0_b2, HVGG_c1_b2_16, HVGG_c2_b2_16, HVGG_c3_b2_16]
+		b0_models = 			[HVGG_c1_b0_16]#, HVGG_c2_b0_16]
+		b1_models = [HVGG_c0_b1, HVGG_c1_b1_16]#, HVGG_c2_b1_16]
+		b2_models = [HVGG_c0_b2, HVGG_c1_b2_16]#, HVGG_c2_b2_16]
 		
 	elif sys.argv[1] == "19":
 		b0_models = 			[HVGG_c1_b0_19, HVGG_c2_b0_19, HVGG_c3_b0_19]
@@ -165,7 +165,9 @@ if __name__ == '__main__':
 	reduction = 'mean'
 	branch_size = 256
 
-	list_of_conf.append(Configuration(lr2, 3, [2], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, b0_models+b1_models+b2_models, branch_size, reinforce, projection, only_thresholded))
+	list_of_conf.append(Configuration(lr2, 7, [4], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, b0_models+b1_models+b2_models, branch_size, reinforce, projection, only_thresholded))
+	#list_of_conf.append(Configuration(lr2, 9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, b0_models+b1_models+b2_models, branch_size, reinforce, projection, only_thresholded))
+	#list_of_conf.append(Configuration(lr2, 3, [2], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, b1_models+b2_models, branch_size, reinforce, projection, only_thresholded))
 
 	
 	t = Tester(list_of_conf)

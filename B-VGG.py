@@ -1,14 +1,15 @@
 import cnn3
 from cnn3 import CNN3
 from cnn3 import torch, optim, nn, F
-from cnn3 import CIFAR100, CIFAR10
 from cnn3 import np
 from cnn3 import device
-from cnn3 import tqdm
 from cnn3 import plt
-import sys
 
+from fashion_mnist import FashionMnist
+from tqdm import tqdm
 from telegramBot import Terminator
+
+import sys
 
 class BVGG(CNN3):
 	def __init__(self, alpha, beta, gamma, weights_switch_points, learning_rate, lr_switch_points, momentum, nesterov, dataset, epochs, every_print):
@@ -114,7 +115,7 @@ class BVGG(CNN3):
 				self.num_push += 1
 				running_loss = torch.zeros(self.dataset.class_levels)
 				running_loss_scalar = 0.0
-				iter = 1
+				iter = 0
 
 			iter +=1
 
@@ -211,7 +212,7 @@ class BVGG19(BVGG):
 
 		
 		# Block 5
-		self.layer29 = nn.Conv2d(256, 512, (3,3), padding = 'same')
+		self.layer29 = nn.Conv2d(512, 512, (3,3), padding = 'same')
 		self.layer30 = nn.BatchNorm2d(512)
 		self.layer31 = nn.Conv2d(512, 512, (3,3), padding = 'same')
 		self.layer32 = nn.BatchNorm2d(512)
@@ -361,7 +362,7 @@ class BVGG16(BVGG):
 
 		
 		# Block 5
-		self.layer25 = nn.Conv2d(256, 512, (3,3), padding = 'same')
+		self.layer25 = nn.Conv2d(512, 512, (3,3), padding = 'same')
 		self.layer26 = nn.BatchNorm2d(512)
 		self.layer27 = nn.Conv2d(512, 512, (3,3), padding = 'same')
 		self.layer28 = nn.BatchNorm2d(512)
@@ -487,7 +488,7 @@ if __name__ == '__main__':
 	epochs = 60
 	weights_switch_points = [15, 25, 35]
 	lr_switch_points = [42, 52]
-	dataset = FASHION_MNIST(batch_size)
+	dataset = FashionMnist(batch_size)
 
 	if sys.argv[1] == "VGG16":
 		cnn = BVGG16(alpha, beta, gamma, weights_switch_points, learning_rate, lr_switch_points, momentum, nesterov, dataset, epochs, every_print)
@@ -505,7 +506,7 @@ if __name__ == '__main__':
 	try:
 		cnn.train_model(track, filename)
 		cnn.save_model(filename)
-		msg = cnn.test(mode = "write", filename = filename)
+		_, msg = cnn.test(mode = "write", filename = filename)
 		
 	except Exception as errore:
 		err = errore

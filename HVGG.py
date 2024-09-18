@@ -136,7 +136,7 @@ class HVGG(CNN3):
 		return b1, b2, b3
 		
 	
-def HVGG_c0_b1(HVGG):
+class HVGG_c0_b1(HVGG):
 
 	def __init__(self, learning_rate, momentum, nesterov, dataset, epochs, 
 					every_print = 512, switch_point = None, custom_training = False, threshold = 0.1, reduction = 'mean', branch_size = 512, reinforce = False, projection = False, only_thresholded = False):
@@ -1092,7 +1092,7 @@ class HVGG_c3_b0_16(HVGG):
 		self.layer24 = nn.MaxPool2d((2,2), stride = (2,2))
 		
 		# Block 5
-		self.layer25 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+		self.layer25 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer26 = nn.BatchNorm2d(512)
 		self.layer27 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer28 = nn.BatchNorm2d(512)
@@ -1184,7 +1184,7 @@ class HVGG_c3_b0_19(HVGG):
 		self.layer28 = nn.MaxPool2d((2,2), stride = (2,2))
 		
 		# Block 5
-		self.layer29 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+		self.layer29 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer30 = nn.BatchNorm2d(512)
 		self.layer31 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer32 = nn.BatchNorm2d(512)
@@ -1283,7 +1283,7 @@ class HVGG_c3_b1_16(HVGG):
 		self.layer24 = nn.MaxPool2d((2,2), stride = (2,2))
 		
 		# Block 5
-		self.layer25 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+		self.layer25 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer26 = nn.BatchNorm2d(512)
 		self.layer27 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer28 = nn.BatchNorm2d(512)
@@ -1383,7 +1383,7 @@ class HVGG_c3_b1_19(HVGG):
 		self.layer28 = nn.MaxPool2d((2,2), stride = (2,2))
 		
 		# Block 5
-		self.layer29 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+		self.layer29 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer30 = nn.BatchNorm2d(512)
 		self.layer31 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer32 = nn.BatchNorm2d(512)
@@ -1490,7 +1490,7 @@ class HVGG_c3_b2_16(HVGG):
 		self.layer24 = nn.MaxPool2d((2,2), stride = (2,2))
 		
 		# Block 5
-		self.layer25 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+		self.layer25 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer26 = nn.BatchNorm2d(512)
 		self.layer27 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer28 = nn.BatchNorm2d(512)
@@ -1597,7 +1597,7 @@ class HVGG_c3_b2_19(HVGG):
 		self.layer28 = nn.MaxPool2d((2,2), stride = (2,2))
 		
 		# Block 5
-		self.layer29 = nn.Conv2d(256, 512, (3,3), padding = 'same', bias = False)
+		self.layer29 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer30 = nn.BatchNorm2d(512)
 		self.layer31 = nn.Conv2d(512, 512, (3,3), padding = 'same', bias = False)
 		self.layer32 = nn.BatchNorm2d(512)

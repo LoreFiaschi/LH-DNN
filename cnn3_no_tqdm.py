@@ -32,7 +32,7 @@ class CNN3(ABC, nn.Module):
 		self.switch_points = switch_points
 		self.custom_training = custom_training
 		self.every_print = every_print - 1 # assumed power of 2, -1 to make the mask
-		self.track_size = int( self.dataset.training_size / self.dataset.batch_size / every_print ) 
+		self.track_size = int( np.ceil(self.dataset.training_size / self.dataset.batch_size) / every_print ) 
 		self.threshold = threshold
 		self.predict_and_learn = self.predict_and_learn_naive if threshold == 0.0 else (self.predict_and_learn_only_thresholded if only_thresholded else self.predict_and_learn_thresholded)
 		self.reduction = reduction
