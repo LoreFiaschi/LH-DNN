@@ -1,7 +1,7 @@
 import cnn3
 from cnn3 import CNN3
 from cnn3 import torch, optim, nn, F
-from cnn3 import CIFAR100, CIFAR10
+from CIFAR import CIFAR100, CIFAR10
 from cnn3 import np
 from cnn3 import device
 import sys
@@ -247,7 +247,12 @@ class BCNN3(CNN3):
 		plt.close()
 		
 			
-if __name__ == '__main__':			
+if __name__ == '__main__':
+
+	cnn3.torch.autograd.set_detect_anomaly(False);
+	cnn3.torch.autograd.profiler.emit_nvtx(False);
+	cnn3.torch.autograd.profiler.profile(False);
+			
 	alpha = [0.98, 0.1, 0.1, 0.]
 	beta = [0.01, 0.8, 0.2, 0.]
 	gamma = [0.01, 0.1, 0.7, 1.]
@@ -294,6 +299,9 @@ if __name__ == '__main__':
 
 		time_spent_per_batch = time_spent_per_epoch / cnn.dataset.training_size * cnn.dataset.batch_size
 		msg += "\n\ntime per batch: " + str(time_spent_per_batch)
+
+		bot.sendMessage("Test completato correttamente")
+		bot.sendMessage("Tempo impiegato: " + str(time_spent) + "\n\n" + "Tempo impiegato per epoca: " + str(time_spent_per_epoch) + "\n\n" + "Tempo impiegato per batch: " + str(time_spent_per_batch))
 
 		with open(filename, "w") as f:
 			f.write(msg)

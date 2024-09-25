@@ -158,14 +158,14 @@ if __name__ == '__main__':
 		raise ValueError(f'Test for {sys.argv[1]} is not supported yet.')
 
 	dataset = FashionMnist(batch_size)
-	lr2 = [1e-3, 2e-4]
-	#lr3 = [1e-3, 2e-4, 5e-5]
+	#lr2 = [1e-3, 2e-4]
+	lr3 = [1e-3, 2e-4, 5e-5]
 	only_thresholded = False
 	threshold = 0.0
 	reduction = 'mean'
 	branch_size = 256
 
-	list_of_conf.append(Configuration(lr2, 7, [4], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, b0_models+b1_models+b2_models, branch_size, reinforce, projection, only_thresholded))
+	list_of_conf.append(Configuration(lr3, 9, [4, 6], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, b0_models+b1_models+b2_models, branch_size, reinforce, projection, only_thresholded))
 	#list_of_conf.append(Configuration(lr2, 9, [5], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, b0_models+b1_models+b2_models, branch_size, reinforce, projection, only_thresholded))
 	#list_of_conf.append(Configuration(lr2, 3, [2], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, b1_models+b2_models, branch_size, reinforce, projection, only_thresholded))
 

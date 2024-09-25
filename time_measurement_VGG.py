@@ -1,9 +1,8 @@
 from telegramBot import Terminator
+import HVGG
+from HVGG import HVGG_c1_b2_16
 import cnn3
-import HCNN3
-from HCNN3 import HCNN3_c2_b0
-from HCNN3 import HCNN3_c4_b0
-from CIFAR import CIFAR100, CIFAR10
+from fashion_mnist import FashionMnist
 from cnn3 import device
 import sys
 from timeit import default_timer as timer
@@ -127,7 +126,7 @@ if __name__ == '__main__':
 	only_thresholded = False
 	threshold = 0.0
 	reduction = 'mean'
-	model = HCNN3_c4_b0
+	model = HVGG_c1_b2_16
 
 	if sys.argv[1] == "CIFAR100":
 		# variable params
@@ -142,10 +141,16 @@ if __name__ == '__main__':
 	
 		dataset = CIFAR10(batch_size)
 		lr = [3e-3, 5e-4]
-		branch_size = 512
+		branch_size = 256
 
 		conf = Configuration(lr, 20, [9], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, model, branch_size, reinforce, projection, only_thresholded)
 		
+	elif sys.argv[1] == "FASHION":
+		dataset = FashionMnist(batch_size)
+		lr = [1e-3, 1e-4, 5e-5]
+		branch_size = 256
+
+		conf = Configuration(lr, 20, [4, 10], momentum, nesterov, every_print, custom_training, threshold, reduction, track, dataset, model, branch_size, reinforce, projection, only_thresholded)
 
 	else:
 		raise ValueError(f'Test for {sys.argv[1]} is not supported yet.')
